@@ -1,0 +1,104 @@
+<dialog class="settings-page" aria-labelledby="settings-title">
+  <div class="panel-heading">
+    <div>
+      <h2 id="settings-title">Settings</h2>
+      <p>Choose how you follow your agents.</p>
+    </div>
+    <button type="button" data-close-settings aria-label="Close settings">
+      Close
+    </button>
+  </div>
+  <form data-settings-form>
+    <section>
+      <h3>Interface</h3>
+      <p>
+        English is the interface language. Your chats and captions stay in their
+        original language.
+      </p>
+    </section>
+    <section>
+      <h3>Studio updates</h3>
+      <p>
+        Choose a provider to summarize recent contributions. Read the original
+        messages and their authors in the transcript.
+      </p>
+      <label
+        >Presentation source<select name="mode">
+          <option value="off">Original agent contributions</option>
+          <option value="cli">Custom update · local CLI</option>
+          <option value="byok">Custom update · your API key</option>
+        </select></label
+      >
+      <div data-custom-settings hidden>
+        <label>Provider<select name="provider"></select></label>
+        <p data-cli-status class="settings-note"></p>
+        <label
+          >Model ID <span data-model-optional>(optional for CLI)</span
+          ><input
+            name="model"
+            maxlength="120"
+            autocomplete="off"
+            placeholder="Model supported by your provider"
+        /></label>
+        <label data-key-field hidden
+          >API key<input
+            name="apiKey"
+            type="password"
+            maxlength="512"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Enter key for this server session" /><small
+            data-key-note
+          ></small
+        ></label>
+        <label
+          >Presentation direction <span>(optional)</span
+          ><textarea
+            name="instructions"
+            rows="3"
+            maxlength="1200"
+            placeholder="Keep it warm and brief. Mention who contributed, what changed, and what needs my attention."
+          ></textarea>
+        </label>
+        <p class="settings-notice">
+          Press <strong>Create studio update</strong> to send up to eight
+          visible agent messages (3,000 characters each) to your selected
+          provider. CLI sessions use your cloud account. The request excludes
+          attachments and hidden reasoning.
+        </p>
+        <label class="consent"
+          ><input name="consent" type="checkbox" /><span
+            >I allow this processing and the associated API cost or CLI account
+            usage.</span
+          ></label
+        >
+      </div>
+      <p class="settings-note">
+        The server holds settings and API keys in memory until you stop it.
+        Restart to restore the launch configuration. Your browser does not save
+        the key.
+      </p>
+    </section>
+    <div class="settings-actions">
+      <button type="submit">Save settings</button
+      ><span data-settings-status role="status"></span>
+    </div>
+  </form>
+  <section class="product-story">
+    <h3>Agents on Air</h3>
+    <p>Your agent chats, animated.</p>
+    <p>
+      You run tasks in Codex and Claude. To follow the work, you switch between
+      chats and read each agent’s updates.
+    </p>
+    <p>
+      Watch the cast beside your work, follow short captions and inspect the
+      images or code changes they shared. Open Codex or Claude to reply or take
+      action.
+    </p>
+    <p>
+      Choose a channel, listen to gibberish or mute it. Read the original
+      messages in the transcript.
+    </p>
+  </section>
+</dialog>

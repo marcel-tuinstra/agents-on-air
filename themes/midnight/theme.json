@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "midnight",
+  "name": "Midnight Signal",
+  "shortName": "Midnight",
+  "rig": "midnight",
+  "role": "The news anchor",
+  "direction": "A measured rhythm, clear sounds and room between sentences.",
+  "cast": "cast.webp",
+  "scenery": "studios.webp",
+  "sceneryPosition": 0,
+  "portrait": [
+    44,
+    0,
+    184,
+    154
+  ],
+  "tokens": {
+    "--ink": "#f6ead7",
+    "--muted": "#c9b39c",
+    "--bg": "#211918",
+    "--panel": "#352725",
+    "--line": "#8a6b56",
+    "--accent": "#e8b877",
+    "--onaccent": "#2c1b17",
+    "--sidebar-bg": "#2a1d1d",
+    "--desk-edge": "69.8%",
+    "--font-ui": "Lora, Georgia, serif",
+    "--font-display": "Lora, Georgia, serif",
+    "--diff-add": "#b7ecc8",
+    "--diff-add-bg": "#193e2b",
+    "--diff-remove": "#ffd0cc",
+    "--diff-remove-bg": "#552a2c"
+  },
+  "audio": "audio.json",
+  "license": "MIT",
+  "enabled": true
+}

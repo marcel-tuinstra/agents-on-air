@@ -1,0 +1,581 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agents on Air · Live</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/themes.css"></head><body><div id="studio-hub" data-theme="midnight"><header class="appbar"><div class="header-identity">
+  <span class="brand">Agents on Air</span
+  ><button
+    type="button"
+    class="header-picker"
+    data-open-picker
+    aria-controls="chat-picker"
+    aria-expanded="false"
+  >
+    <span data-header-provider aria-hidden="true"></span
+    ><span class="header-chat" data-header-chat>Your chats</span
+    ><span class="header-channel" data-header-channel>Midnight</span
+    ><svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  </button>
+</div>
+<div class="header-spacer"></div>
+<div class="speech-controls" role="group" aria-label="Audio">
+  <button
+    type="button"
+    class="icon-button"
+    data-audio-mute
+    aria-pressed="false"
+    aria-label="Mute gibberish"
+    title="Mute gibberish"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H3v6h3l5 4Z" />
+      <path data-audio-on d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" />
+      <path data-audio-off d="m16 9 5 6m0-6-5 6" hidden />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-pause
+    aria-label="Pause audio"
+    title="Pause audio"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M8 5v14M16 5v14" />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-skip
+    aria-label="Skip audio"
+    title="Skip audio"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="m5 5 10 7-10 7ZM19 5v14" />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-retry
+    aria-label="Retry audio"
+    title="Retry audio"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 10a8 8 0 0 1 1 7M4 4v6h6" />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-latest
+    aria-label="Play latest contribution"
+    title="Play latest contribution"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M20 12V5H4v14l4-3h4m4-4 5 3-5 3Z" />
+    </svg>
+  </button>
+</div>
+<span data-speech-status role="status" class="speech-status"></span
+><span
+  class="connection-indicator"
+  data-connection
+  data-state="connecting"
+  role="status"
+  title="Connecting…"
+  ><svg
+    viewBox="0 0 24 24"
+    width="19"
+    height="19"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    aria-hidden="true"
+  >
+    <path d="M4 9a12 12 0 0 1 16 0M7 12a7 7 0 0 1 10 0m-7 3a3 3 0 0 1 4 0" />
+    <circle cx="12" cy="19" r=".8" /></svg
+  ><span class="sr" data-connection-label>Connecting…</span></span
+>
+<button
+  type="button"
+  class="icon-button"
+  data-open-settings
+  aria-label="Open settings"
+  title="Settings"
+>
+  <svg
+    viewBox="0 0 24 24"
+    width="19"
+    height="19"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    aria-hidden="true"
+  >
+    <path d="M4 7h16M4 17h16" />
+    <circle cx="9" cy="7" r="3" fill="var(--sidebar-bg)" />
+    <circle cx="15" cy="17" r="3" fill="var(--sidebar-bg)" />
+  </svg>
+</button>
+</header>
+<div class="picker-backdrop" data-picker-backdrop hidden></div>
+<aside
+  class="chat-picker"
+  id="chat-picker"
+  aria-label="Chats and channel"
+  hidden
+>
+  <div class="panel-heading">
+    <h2>Your chats</h2>
+    <button
+      type="button"
+      class="quiet-button"
+      data-close-picker
+      aria-label="Close chats"
+    >
+      Close
+    </button>
+  </div>
+  <fieldset class="channel-control">
+    <legend>Channel for all chats</legend>
+    <div class="channel-options"><label class="channel-option" title="Midnight Signal"><input type="radio" name="studio-channel" value="midnight" aria-label="Midnight Signal"><span class="channel-avatar"><canvas width="128" height="128" data-channel-portrait="midnight" aria-hidden="true"></canvas></span><span>Midnight</span></label><label class="channel-option" title="Paper Frequency"><input type="radio" name="studio-channel" value="paper" aria-label="Paper Frequency"><span class="channel-avatar"><canvas width="128" height="128" data-channel-portrait="paper" aria-hidden="true"></canvas></span><span>Paper</span></label><label class="channel-option" title="Pocket Broadcast"><input type="radio" name="studio-channel" value="pocket" aria-label="Pocket Broadcast"><span class="channel-avatar"><canvas width="128" height="128" data-channel-portrait="pocket" aria-hidden="true"></canvas></span><span>Pocket</span></label></div>
+  </fieldset>
+  <label class="search-label"
+    ><span class="sr">Search chats</span
+    ><input
+      type="search"
+      data-search
+      placeholder="Search recent chats"
+      autocomplete="off"
+  /></label>
+  <p class="picker-note">Activity in the last 24 hours</p>
+  <nav class="chat-list" aria-label="Choose a chat"></nav>
+  <p class="source-note" data-sources></p>
+</aside>
+<main class="room-main">
+  <div class="load building" role="status">
+    <div class="build-scene" aria-hidden="true">
+      <svg viewBox="0 0 480 280" fill="none">
+        <path
+          class="build-floor"
+          d="M25 252H455M50 258H430"
+          stroke="currentColor"
+          stroke-width="2"
+        />
+        <g class="build-walls">
+          <path
+            d="M54 245V80L100 40H380L426 80V245"
+            fill="var(--panel)"
+            stroke="var(--line)"
+            stroke-width="3"
+          />
+          <path d="M84 232V84H396V232" stroke="var(--line)" />
+          <path d="M103 98H175V191H103ZM305 98H377V191H305Z" fill="var(--bg)" />
+          <path
+            d="M139 98V191M341 98V191M103 145H175M305 145H377"
+            stroke="var(--line)"
+          />
+        </g>
+        <g class="build-screen">
+          <rect
+            x="188"
+            y="84"
+            width="104"
+            height="73"
+            rx="3"
+            fill="var(--bg)"
+            stroke="var(--accent)"
+            stroke-width="3"
+          />
+          <path
+            d="M203 137L222 116L240 130L260 104L277 119"
+            stroke="var(--accent)"
+            stroke-width="3"
+          />
+          <path d="M224 165H256" stroke="var(--line)" stroke-width="3" />
+        </g>
+        <g class="build-desk">
+          <path
+            d="M128 198H352L343 245H137Z"
+            fill="var(--sidebar-bg)"
+            stroke="var(--line)"
+            stroke-width="3"
+          />
+          <rect
+            x="117"
+            y="186"
+            width="246"
+            height="15"
+            rx="3"
+            fill="var(--accent)"
+          />
+          <path d="M199 216H281" stroke="var(--accent)" stroke-width="3" />
+        </g>
+        <g class="build-lights">
+          <path
+            d="M42 36H438M96 36V57M384 36V57"
+            stroke="var(--line)"
+            stroke-width="4"
+          />
+          <path
+            d="M79 57H113L108 76H84ZM367 57H401L396 76H372Z"
+            fill="var(--accent)"
+          />
+          <path
+            class="build-beams"
+            d="M84 77L50 181H160L108 77ZM372 77L320 181H430L396 77Z"
+            fill="var(--accent)"
+            opacity=".16"
+          />
+        </g>
+        <g class="build-sign">
+          <rect
+            x="208"
+            y="45"
+            width="64"
+            height="21"
+            rx="3"
+            fill="var(--accent)"
+          />
+          <text
+            x="240"
+            y="60"
+            text-anchor="middle"
+            font-size="11"
+            font-family="inherit"
+            fill="var(--onaccent)"
+          >
+            ON AIR
+          </text>
+        </g>
+      </svg>
+    </div>
+    <h1>Building your studio</h1>
+    <p data-load-label>Setting the scene…</p>
+    <div class="build-steps" aria-hidden="true">
+      <span>Set</span><span>Screen</span><span>Desk</span><span>Lights</span>
+    </div>
+    <button type="button" data-skip-intro>Skip intro</button>
+  </div>
+  <div class="live-error" role="alert" hidden data-error></div>
+  <section class="no-selection" data-no-selection hidden>
+    <h1>Choose an active chat</h1>
+    <p data-no-selection-copy>
+      Find chats active in the last 24 hours in Your chats.
+    </p>
+    <button type="button" data-open-picker-empty>Open your chats</button>
+  </section>
+  <div data-ready hidden>
+    <div class="session-identity sr">
+      <div data-provider></div>
+      <h1 data-title></h1>
+      <div data-summary></div>
+    </div>
+    <div class="room-state" data-room-state role="status"></div>
+    <div class="stage" aria-label="Studio and shared work">
+      <section class="work-screen" aria-label="Shared work">
+        <div class="work-screen-head">
+          <span>Work screen</span
+          ><span data-work-kind>Recorded contribution</span>
+          <div class="session-actions">
+            <button
+              type="button"
+              class="icon-button"
+              data-view-toggle
+              aria-pressed="false"
+              aria-label="Compact view"
+              title="Compact view"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M13 12h6v6h-6z" />
+              </svg></button
+            ><button
+              type="button"
+              class="icon-button"
+              data-open-transcript
+              aria-controls="transcript-panel"
+              aria-expanded="false"
+              aria-label="Open transcript"
+              title="Open transcript"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p class="work-activity" data-work-activity hidden></p>
+        <div class="work-screen-content" data-work-content></div>
+        <div class="work-screen-foot">
+          <span data-work-source></span>
+          <nav
+            class="work-navigation"
+            aria-label="Shared work"
+            hidden
+            data-work-navigation
+          >
+            <button
+              type="button"
+              data-work-newer
+              aria-label="Newer work"
+              title="Newer work"
+            >
+              ←</button
+            ><span data-work-position></span
+            ><button
+              type="button"
+              data-work-older
+              aria-label="Older work"
+              title="Older work"
+            >
+              →
+            </button>
+          </nav>
+          <button type="button" data-open-work-detail hidden>
+            Read contribution
+          </button>
+        </div>
+      </section>
+      <section class="cast-set" aria-label="Lead agent studio">
+        <div class="scenery"></div>
+        <div class="desk"></div>
+        <div class="studio-label" data-studio></div>
+        <span class="sleep-sign" aria-hidden="true">z z Z</span
+        ><canvas width="256" height="256" data-host aria-hidden="true"></canvas>
+        <div class="host-name">
+          <strong data-hostname></strong><span data-host-status></span>
+        </div>
+        <div class="cast-list" data-cast-list></div>
+        <div class="cast-empty" data-cast-empty hidden>
+          No supporting agents on stage.
+        </div>
+      </section>
+    </div>
+    <section class="caption-bar" aria-label="Live caption">
+      <div class="caption-meta">
+        <strong data-caption-speaker></strong><span data-caption-time></span>
+      </div>
+      <p data-caption-text aria-live="polite"></p>
+      <div class="caption-actions">
+        <button type="button" data-caption-back aria-label="Previous caption">
+          Previous</button
+        ><button type="button" data-caption-pause aria-pressed="false">
+          Pause captions</button
+        ><button type="button" data-caption-next aria-label="Next caption">
+          Next
+        </button>
+      </div>
+    </section>
+    <div class="room-foot">
+      <button type="button" data-summarize hidden>Create studio update</button
+      ><span data-summary-status role="status"></span>
+    </div>
+  </div>
+</main>
+<div class="drawer-backdrop" data-drawer-backdrop hidden></div>
+<aside
+  class="transcript-panel"
+  id="transcript-panel"
+  aria-label="Transcript"
+  hidden
+>
+  <div class="panel-heading">
+    <div>
+      <h2>Transcript <span data-logcount></span></h2>
+      <p class="history-note" data-history-note></p>
+    </div>
+    <button
+      type="button"
+      class="quiet-button"
+      data-close-transcript
+      aria-label="Close transcript"
+    >
+      Close
+    </button>
+  </div>
+  <label class="filter-label"
+    >Speaker
+    <select data-filter></select
+  ></label>
+  <div class="logs"></div>
+  <button type="button" class="history-more" data-more hidden>
+    More messages
+  </button>
+</aside>
+<dialog class="settings-page" aria-labelledby="settings-title">
+  <div class="panel-heading">
+    <div>
+      <h2 id="settings-title">Settings</h2>
+      <p>Choose how you follow your agents.</p>
+    </div>
+    <button type="button" data-close-settings aria-label="Close settings">
+      Close
+    </button>
+  </div>
+  <form data-settings-form>
+    <section>
+      <h3>Interface</h3>
+      <p>
+        English is the interface language. Your chats and captions stay in their
+        original language.
+      </p>
+    </section>
+    <section>
+      <h3>Studio updates</h3>
+      <p>
+        Choose a provider to summarize recent contributions. Read the original
+        messages and their authors in the transcript.
+      </p>
+      <label
+        >Presentation source<select name="mode">
+          <option value="off">Original agent contributions</option>
+          <option value="cli">Custom update · local CLI</option>
+          <option value="byok">Custom update · your API key</option>
+        </select></label
+      >
+      <div data-custom-settings hidden>
+        <label>Provider<select name="provider"></select></label>
+        <p data-cli-status class="settings-note"></p>
+        <label
+          >Model ID <span data-model-optional>(optional for CLI)</span
+          ><input
+            name="model"
+            maxlength="120"
+            autocomplete="off"
+            placeholder="Model supported by your provider"
+        /></label>
+        <label data-key-field hidden
+          >API key<input
+            name="apiKey"
+            type="password"
+            maxlength="512"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Enter key for this server session" /><small
+            data-key-note
+          ></small
+        ></label>
+        <label
+          >Presentation direction <span>(optional)</span
+          ><textarea
+            name="instructions"
+            rows="3"
+            maxlength="1200"
+            placeholder="Keep it warm and brief. Mention who contributed, what changed, and what needs my attention."
+          ></textarea>
+        </label>
+        <p class="settings-notice">
+          Press <strong>Create studio update</strong> to send up to eight
+          visible agent messages (3,000 characters each) to your selected
+          provider. CLI sessions use your cloud account. The request excludes
+          attachments and hidden reasoning.
+        </p>
+        <label class="consent"
+          ><input name="consent" type="checkbox" /><span
+            >I allow this processing and the associated API cost or CLI account
+            usage.</span
+          ></label
+        >
+      </div>
+      <p class="settings-note">
+        The server holds settings and API keys in memory until you stop it.
+        Restart to restore the launch configuration. Your browser does not save
+        the key.
+      </p>
+    </section>
+    <div class="settings-actions">
+      <button type="submit">Save settings</button
+      ><span data-settings-status role="status"></span>
+    </div>
+  </form>
+  <section class="product-story">
+    <h3>Agents on Air</h3>
+    <p>Your agent chats, animated.</p>
+    <p>
+      You run tasks in Codex and Claude. To follow the work, you switch between
+      chats and read each agent’s updates.
+    </p>
+    <p>
+      Watch the cast beside your work, follow short captions and inspect the
+      images or code changes they shared. Open Codex or Claude to reply or take
+      action.
+    </p>
+    <p>
+      Choose a channel, listen to gibberish or mute it. Read the original
+      messages in the transcript.
+    </p>
+  </section>
+</dialog>
+
+</div><script src="/marked.js" defer></script><script src="/purify.js" defer></script><script src="/markdown.js" defer></script><script src="/stage-model.js" defer></script><script src="/themes.js" defer></script><script src="/voice-profiles.js" defer></script><script src="/speech.js" defer></script><script src="/body.js" defer></script><script src="/rig.js" defer></script><script src="/controllers.js" defer></script><script src="/stream.js" defer></script><script src="/work-view.js" defer></script><script src="/app.js" defer></script><script src="/settings.js" defer></script></body></html>

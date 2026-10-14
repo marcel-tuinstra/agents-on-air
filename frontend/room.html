@@ -1,0 +1,303 @@
+<header class="appbar"></header>
+<div class="picker-backdrop" data-picker-backdrop hidden></div>
+<aside
+  class="chat-picker"
+  id="chat-picker"
+  aria-label="Chats and channel"
+  hidden
+>
+  <div class="panel-heading">
+    <h2>Your chats</h2>
+    <button
+      type="button"
+      class="quiet-button"
+      data-close-picker
+      aria-label="Close chats"
+    >
+      Close
+    </button>
+  </div>
+  <fieldset class="channel-control">
+    <legend>Channel for all chats</legend>
+    <div class="channel-options"><!-- CHANNELS --></div>
+  </fieldset>
+  <label class="search-label"
+    ><span class="sr">Search chats</span
+    ><input
+      type="search"
+      data-search
+      placeholder="Search recent chats"
+      autocomplete="off"
+  /></label>
+  <p class="picker-note">Activity in the last 24 hours</p>
+  <nav class="chat-list" aria-label="Choose a chat"></nav>
+  <p class="source-note" data-sources></p>
+</aside>
+<main class="room-main">
+  <div class="load building" role="status">
+    <div class="build-scene" aria-hidden="true">
+      <svg viewBox="0 0 480 280" fill="none">
+        <path
+          class="build-floor"
+          d="M25 252H455M50 258H430"
+          stroke="currentColor"
+          stroke-width="2"
+        />
+        <g class="build-walls">
+          <path
+            d="M54 245V80L100 40H380L426 80V245"
+            fill="var(--panel)"
+            stroke="var(--line)"
+            stroke-width="3"
+          />
+          <path d="M84 232V84H396V232" stroke="var(--line)" />
+          <path d="M103 98H175V191H103ZM305 98H377V191H305Z" fill="var(--bg)" />
+          <path
+            d="M139 98V191M341 98V191M103 145H175M305 145H377"
+            stroke="var(--line)"
+          />
+        </g>
+        <g class="build-screen">
+          <rect
+            x="188"
+            y="84"
+            width="104"
+            height="73"
+            rx="3"
+            fill="var(--bg)"
+            stroke="var(--accent)"
+            stroke-width="3"
+          />
+          <path
+            d="M203 137L222 116L240 130L260 104L277 119"
+            stroke="var(--accent)"
+            stroke-width="3"
+          />
+          <path d="M224 165H256" stroke="var(--line)" stroke-width="3" />
+        </g>
+        <g class="build-desk">
+          <path
+            d="M128 198H352L343 245H137Z"
+            fill="var(--sidebar-bg)"
+            stroke="var(--line)"
+            stroke-width="3"
+          />
+          <rect
+            x="117"
+            y="186"
+            width="246"
+            height="15"
+            rx="3"
+            fill="var(--accent)"
+          />
+          <path d="M199 216H281" stroke="var(--accent)" stroke-width="3" />
+        </g>
+        <g class="build-lights">
+          <path
+            d="M42 36H438M96 36V57M384 36V57"
+            stroke="var(--line)"
+            stroke-width="4"
+          />
+          <path
+            d="M79 57H113L108 76H84ZM367 57H401L396 76H372Z"
+            fill="var(--accent)"
+          />
+          <path
+            class="build-beams"
+            d="M84 77L50 181H160L108 77ZM372 77L320 181H430L396 77Z"
+            fill="var(--accent)"
+            opacity=".16"
+          />
+        </g>
+        <g class="build-sign">
+          <rect
+            x="208"
+            y="45"
+            width="64"
+            height="21"
+            rx="3"
+            fill="var(--accent)"
+          />
+          <text
+            x="240"
+            y="60"
+            text-anchor="middle"
+            font-size="11"
+            font-family="inherit"
+            fill="var(--onaccent)"
+          >
+            ON AIR
+          </text>
+        </g>
+      </svg>
+    </div>
+    <h1>Building your studio</h1>
+    <p data-load-label>Setting the scene…</p>
+    <div class="build-steps" aria-hidden="true">
+      <span>Set</span><span>Screen</span><span>Desk</span><span>Lights</span>
+    </div>
+    <button type="button" data-skip-intro>Skip intro</button>
+  </div>
+  <div class="live-error" role="alert" hidden data-error></div>
+  <section class="no-selection" data-no-selection hidden>
+    <h1>Choose an active chat</h1>
+    <p data-no-selection-copy>
+      Find chats active in the last 24 hours in Your chats.
+    </p>
+    <button type="button" data-open-picker-empty>Open your chats</button>
+  </section>
+  <div data-ready hidden>
+    <div class="session-identity sr">
+      <div data-provider></div>
+      <h1 data-title></h1>
+      <div data-summary></div>
+    </div>
+    <div class="room-state" data-room-state role="status"></div>
+    <div class="stage" aria-label="Studio and shared work">
+      <section class="work-screen" aria-label="Shared work">
+        <div class="work-screen-head">
+          <span>Work screen</span
+          ><span data-work-kind>Recorded contribution</span>
+          <div class="session-actions">
+            <button
+              type="button"
+              class="icon-button"
+              data-view-toggle
+              aria-pressed="false"
+              aria-label="Compact view"
+              title="Compact view"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M13 12h6v6h-6z" />
+              </svg></button
+            ><button
+              type="button"
+              class="icon-button"
+              data-open-transcript
+              aria-controls="transcript-panel"
+              aria-expanded="false"
+              aria-label="Open transcript"
+              title="Open transcript"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <p class="work-activity" data-work-activity hidden></p>
+        <div class="work-screen-content" data-work-content></div>
+        <div class="work-screen-foot">
+          <span data-work-source></span>
+          <nav
+            class="work-navigation"
+            aria-label="Shared work"
+            hidden
+            data-work-navigation
+          >
+            <button
+              type="button"
+              data-work-newer
+              aria-label="Newer work"
+              title="Newer work"
+            >
+              ←</button
+            ><span data-work-position></span
+            ><button
+              type="button"
+              data-work-older
+              aria-label="Older work"
+              title="Older work"
+            >
+              →
+            </button>
+          </nav>
+          <button type="button" data-open-work-detail hidden>
+            Read contribution
+          </button>
+        </div>
+      </section>
+      <section class="cast-set" aria-label="Lead agent studio">
+        <div class="scenery"></div>
+        <div class="desk"></div>
+        <div class="studio-label" data-studio></div>
+        <span class="sleep-sign" aria-hidden="true">z z Z</span
+        ><canvas width="256" height="256" data-host aria-hidden="true"></canvas>
+        <div class="host-name">
+          <strong data-hostname></strong><span data-host-status></span>
+        </div>
+        <div class="cast-list" data-cast-list></div>
+        <div class="cast-empty" data-cast-empty hidden>
+          No supporting agents on stage.
+        </div>
+      </section>
+    </div>
+    <section class="caption-bar" aria-label="Live caption">
+      <div class="caption-meta">
+        <strong data-caption-speaker></strong><span data-caption-time></span>
+      </div>
+      <p data-caption-text aria-live="polite"></p>
+      <div class="caption-actions">
+        <button type="button" data-caption-back aria-label="Previous caption">
+          Previous</button
+        ><button type="button" data-caption-pause aria-pressed="false">
+          Pause captions</button
+        ><button type="button" data-caption-next aria-label="Next caption">
+          Next
+        </button>
+      </div>
+    </section>
+    <div class="room-foot">
+      <button type="button" data-summarize hidden>Create studio update</button
+      ><span data-summary-status role="status"></span>
+    </div>
+  </div>
+</main>
+<div class="drawer-backdrop" data-drawer-backdrop hidden></div>
+<aside
+  class="transcript-panel"
+  id="transcript-panel"
+  aria-label="Transcript"
+  hidden
+>
+  <div class="panel-heading">
+    <div>
+      <h2>Transcript <span data-logcount></span></h2>
+      <p class="history-note" data-history-note></p>
+    </div>
+    <button
+      type="button"
+      class="quiet-button"
+      data-close-transcript
+      aria-label="Close transcript"
+    >
+      Close
+    </button>
+  </div>
+  <label class="filter-label"
+    >Speaker
+    <select data-filter></select
+  ></label>
+  <div class="logs"></div>
+  <button type="button" class="history-more" data-more hidden>
+    More messages
+  </button>
+</aside>
+<!-- SETTINGS -->

@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict');
+global.StudioText=require('../static/markdown.js');global.localStorage={getItem:()=>null,setItem:()=>{}};require('../static/speech.js');
+const message=(text,id='m',agentId='a')=>({id,agentId,text,speaker:agentId});
+function player(){const s=new StudioSpeech(()=>{},id=>({channel:'midnight',slot:Number(id.replace('agent',''))||0}));s.enabled=true;s.mode='garble';s.profiles=Array.from({length:11},(_,i)=>({id:'p'+i}));s.paused=true;return s;}
+(async()=>{
+ const text=('Dit is een Nederlandse zin. This is an English sentence! ').repeat(50);const c=StudioSpeechChunks(text);assert.ok(c.every(t=>t.length<=480));assert.equal(c.join(' '),text.trim());assert.equal(StudioSpeechChunks('x'.repeat(1201)).join(''),'x'.repeat(1201));
+ const s=player();const agents=Array.from({length:11},(_,i)=>({id:'agent'+i}));assert.equal(new Set(agents.map(a=>s.profile(a.id,agents))).size,11);
+ s.offer(message('Eerste zin.'));s.offer(message('Eerste zin. Tweede zin.'));s.offer(message('Eerste zin. Tweede zin.'));assert.deepEqual(s.queue.map(x=>x.text),['Eerste zin.','Tweede zin.']);s.offer(message('Volledig herschreven.'));assert.equal(s.queue.length,2);s.offer(message('Volledig herschreven.'),[],true);assert.equal(s.queue.length,3);
+ const cues=[{start:0,end:.1,value:'A'},{start:.1,end:.3,value:'F'},{start:.3,end:.6,value:'G'},{start:.6,end:.8,value:'H'},{start:.8,end:1,value:'X'}];
+ s.current={agentId:'a',playing:true,cues,startedAt:10};s.context={currentTime:10.2};assert.equal(s.mouth('a').code,'X');s.paused=false;assert.equal(s.mouth('a').code,'F');assert.ok(s.mouth('a').width<.5);assert.equal(s.mouth('b').code,'X');s.context.currentTime=10.4;assert.equal(s.mouth('a').code,'G');s.context.currentTime=10.7;assert.equal(s.mouth('a').code,'H');s.context.currentTime=11;assert.equal(s.mouth('a').code,'X');
+ for(const code of 'ABCDEFGHX'){const shape=StudioVisemeAt([{start:0,end:1,value:code}],.5);assert.equal(shape.code,code);assert.ok(Number.isFinite(shape.width));}
+ assert.equal(StudioVisemeAt([{start:0,end:.1,value:'D'},{start:.4,end:.8,value:'F'}],.4).open,0);
+ assert.equal(StudioVisemeAt(cues,-.1).code,'X');assert.equal(StudioVisemeAt(cues,3).code,'X');
+ const cast=new StudioSpeech(()=>{},()=>({channel:'paper',slot:3}));assert.equal(cast.profile('irrelevant'),'paper-3');cast.cast=()=>({channel:'pocket',slot:10});assert.equal(cast.profile('same'),'pocket-10');
+ const captions=StudioCaptionChunks('One short line. '+('Several words for a caption. '.repeat(12)));assert.ok(captions.every(x=>x.length>0&&x.length<=80));assert.equal(captions.join(' '),'One short line. '+('Several words for a caption. '.repeat(12)).trim());
+ const weightedText=Array.from({length:30},(_,i)=>'word'+i).join(' '),weighted=StudioSpeechCaptionCues(weightedText,10),weights=weighted.map(c=>c.text.split(/\s+/).length),durations=weighted.map(c=>c.end-c.start);assert.equal(weighted.at(-1).end,10);assert.ok(new Set(durations.map(n=>n.toFixed(6))).size>1,'caption timing must reflect spoken word counts instead of equal intervals');assert.ok(Math.abs(durations[0]/weights[0]-durations.at(-1)/weights.at(-1))<1e-6);
+ const longQueue=player();longQueue.offer(message('x'.repeat(4500),'long'),[],true);assert.equal(longQueue.queue.map(q=>q.text).join('').length,4500,'language context cap must not truncate spoken message text');assert.equal(longQueue.queue[0].languageText,undefined);
+ let stopped=false;const playing=player();playing.busy=true;playing.node={stop:()=>{stopped=true}};playing.reset();assert.equal(stopped,true);assert.equal(playing.busy,false);assert.equal(playing.current,null);
+ const error=player();error.context={state:'running',createBuffer(){throw Error('Audio allocation failed');}};error.offer(message('Eerste'));error.offer(message('Tweede','n'));error.paused=false;await error.pump();assert.equal(error.failed,true);assert.equal(error.queue.length,1);assert.match(error.status,/retry/);error.retry();await new Promise(r=>setImmediate(r));assert.equal(error.current.text,'Eerste');assert.equal(error.queue.length,1);
+ console.log('Speech queue, long chunks, fixed cast, audio-clock visemes, updates, reset, silence/pause and retry: passed');
+})().catch(e=>{console.error(e);process.exitCode=1});

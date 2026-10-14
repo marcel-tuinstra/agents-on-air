@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Agents on Air · Voice lab</title>
+    <link rel="stylesheet" href="/voice-lab/lab.css" />
+    <link rel="stylesheet" href="/themes.css" />
+  </head>
+  <body data-theme="midnight">
+    <header>
+      <a href="/">← Back to the studio</a
+      ><span>Voice lab · fictional scene</span>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">INSTALLED CHANNELS</p>
+        <h1>Preview the cast.</h1>
+        <p>
+          Choose a channel to hear its host and guest. The live studio uses
+          these voices.
+        </p>
+      </section>
+      <div class="workspace">
+        <section class="preview" aria-label="Animated voice preview">
+          <div class="channelbar" role="group" aria-label="Channel">
+            <button data-channel="midnight" aria-pressed="true">Midnight</button
+            ><button data-channel="paper" aria-pressed="false">Paper</button
+            ><button data-channel="pocket" aria-pressed="false">Pocket</button>
+          </div>
+          <div class="scene">
+            <div class="scene-label">
+              <span class="dot"></span
+              ><span id="scene-label">MIDNIGHT SIGNAL</span
+              ><small>Fictional preview</small>
+            </div>
+            <div class="actor host">
+              <canvas width="512" height="512" aria-label="Host"></canvas
+              ><span>Host</span>
+            </div>
+            <div class="actor guest">
+              <canvas width="512" height="512" aria-label="Guest"></canvas
+              ><span>Guest</span>
+            </div>
+            <div class="desk"></div>
+            <div class="caption" id="caption">Press play to hear the cast.</div>
+          </div>
+          <div class="transport">
+            <button id="pause" disabled aria-label="Pause" title="Pause">
+              Ⅱ</button
+            ><button id="stop" disabled aria-label="Stop" title="Stop">■</button
+            ><button
+              id="mute"
+              aria-pressed="false"
+              aria-label="Mute sound"
+              title="Mute sound"
+            >
+              ♪</button
+            ><progress
+              id="progress"
+              max="1"
+              value="0"
+              aria-label="Current contribution progress"
+            ></progress
+            ><span id="time">0:00</span>
+          </div>
+        </section>
+        <section class="choices" aria-label="Preview conversation">
+          <p class="eyebrow" id="role">THE NEWS ANCHOR</p>
+          <h2 id="character">Midnight Signal</h2>
+          <p id="direction">
+            A measured rhythm, clear sounds and room between sentences.
+          </p>
+          <label for="trial-text">The host says</label
+          ><textarea id="trial-text" rows="4" maxlength="240">
+Welcome back. The first images are in. What did you discover?</textarea>
+          <p class="reply">
+            The guest replies: “Everything is ready. Let me show you!”
+          </p>
+          <button class="primary" id="play">▶ Listen to the cast</button>
+          <p id="status" role="status">Ready for the preview.</p>
+          <p class="footnote">
+            Read the real text while listening to gibberish. Your browser
+            generates the sounds. This preview uses a fictional conversation.
+          </p>
+        </section>
+      </div>
+    </main>
+    <script src="/markdown.js" defer></script>
+    <script src="/themes.js" defer></script>
+    <script src="/voice-profiles.js" defer></script>
+    <script src="/speech.js" defer></script>
+    <script src="/body.js" defer></script>
+    <script src="/rig.js" defer></script>
+    <script src="/voice-lab/rig.js" defer></script>
+    <script src="/voice-lab/lab.js" defer></script>
+  </body>
+</html>

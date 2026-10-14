@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "paper",
+  "name": "Paper Frequency",
+  "shortName": "Paper",
+  "rig": "paper",
+  "role": "The friendly fox",
+  "direction": "Warm, rounded sounds with a light, friendly rhythm.",
+  "cast": "cast.webp",
+  "scenery": "studios.webp",
+  "sceneryPosition": 50,
+  "portrait": [
+    0,
+    0,
+    256,
+    178
+  ],
+  "tokens": {
+    "--ink": "#342f29",
+    "--muted": "#655847",
+    "--bg": "#f4ecde",
+    "--panel": "#e9ddc9",
+    "--line": "#9d8d75",
+    "--accent": "#235759",
+    "--onaccent": "#fff8e9",
+    "--sidebar-bg": "#e7d8bd",
+    "--desk-edge": "64.1%",
+    "--font-ui": "Nunito, ui-rounded, sans-serif",
+    "--font-display": "Nunito, ui-rounded, sans-serif",
+    "--diff-add": "#174d2c",
+    "--diff-add-bg": "#d5e9d6",
+    "--diff-remove": "#812321",
+    "--diff-remove-bg": "#f4d5cf"
+  },
+  "audio": "audio.json",
+  "license": "MIT",
+  "enabled": true
+}

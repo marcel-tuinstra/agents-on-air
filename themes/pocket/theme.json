@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "pocket",
+  "name": "Pocket Broadcast",
+  "shortName": "Pocket",
+  "rig": "pocket",
+  "role": "The speedy robot",
+  "direction": "A bright beep-boop for the host; a softer digital voice for the guest.",
+  "cast": "cast.webp",
+  "scenery": "studios.webp",
+  "sceneryPosition": 100,
+  "portrait": [
+    22,
+    46,
+    214,
+    148
+  ],
+  "tokens": {
+    "--ink": "#f4eed7",
+    "--muted": "#c0c6e2",
+    "--bg": "#171c39",
+    "--panel": "#252d50",
+    "--line": "#7782ae",
+    "--accent": "#f3d57e",
+    "--onaccent": "#202444",
+    "--sidebar-bg": "#202444",
+    "--desk-edge": "59.2%",
+    "--font-ui": "\"Pixelify Sans\", monospace",
+    "--font-display": "Silkscreen, monospace",
+    "--diff-add": "#bdffd0",
+    "--diff-add-bg": "#183c35",
+    "--diff-remove": "#ffd2dc",
+    "--diff-remove-bg": "#492c46"
+  },
+  "audio": "audio.json",
+  "license": "MIT",
+  "enabled": true
+}

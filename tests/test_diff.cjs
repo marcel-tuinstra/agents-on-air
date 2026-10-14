@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');
+const {diffLines}=require('../static/stage-model.js');
+const source='diff --git a/a b/a\r\n--- a/a\r\n+++ b/a\r\n@@ -1,2 +1,2 @@\r\n-old\r\n+<img src=x onerror=alert(1)>\r\n+++counter;\r\n context\r\n\\ No newline at end of file';
+const rows=diffLines(source);
+assert.deepEqual(rows.map(r=>r.kind),['meta','meta','meta','hunk','removed','added','added','context','meta']);
+assert.equal(rows.map(r=>r.text).join(''),source);
+assert.deepEqual(diffLines(''),[]);
+assert.deepEqual(diffLines('-old\n+new\n').map(r=>r.kind),['removed','added']);
+assert.equal(diffLines('+<script>bad()</script>')[0].text,'+<script>bad()</script>');
+assert.deepEqual(diffLines('*** Begin Patch\n*** Update File: a\n@@\n-old\n+new\n*** End Patch').map(r=>r.kind),['meta','meta','hunk','removed','added','meta']);
+console.log('Diff classification and exact source preservation passed');

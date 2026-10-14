@@ -1,0 +1,21 @@
+# Local runtime and credentials
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+# Historical QA captures in this folder are not project assets.
+/*.png
+/*.jpg
+/*.jpeg
+/*.wav
+/*.zip
+/*.tmp
+/preview*
+
+# Archived local audio experiments
+/samples/
+/models/

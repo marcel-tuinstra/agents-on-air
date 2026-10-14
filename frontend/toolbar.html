@@ -1,0 +1,173 @@
+<div class="header-identity">
+  <span class="brand">Agents on Air</span
+  ><button
+    type="button"
+    class="header-picker"
+    data-open-picker
+    aria-controls="chat-picker"
+    aria-expanded="false"
+  >
+    <span data-header-provider aria-hidden="true"></span
+    ><span class="header-chat" data-header-chat>Your chats</span
+    ><span class="header-channel" data-header-channel>Midnight</span
+    ><svg
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  </button>
+</div>
+<div class="header-spacer"></div>
+<div class="speech-controls" role="group" aria-label="Audio">
+  <button
+    type="button"
+    class="icon-button"
+    data-audio-mute
+    aria-pressed="false"
+    aria-label="Mute gibberish"
+    title="Mute gibberish"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H3v6h3l5 4Z" />
+      <path data-audio-on d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" />
+      <path data-audio-off d="m16 9 5 6m0-6-5 6" hidden />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-pause
+    aria-label="Pause audio"
+    title="Pause audio"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M8 5v14M16 5v14" />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-skip
+    aria-label="Skip audio"
+    title="Skip audio"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="m5 5 10 7-10 7ZM19 5v14" />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-retry
+    aria-label="Retry audio"
+    title="Retry audio"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M4 10a8 8 0 0 1 1 7M4 4v6h6" />
+    </svg></button
+  ><button
+    type="button"
+    class="icon-button"
+    data-speech-latest
+    aria-label="Play latest contribution"
+    title="Play latest contribution"
+    disabled
+  >
+    <svg
+      viewBox="0 0 24 24"
+      width="19"
+      height="19"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <path d="M20 12V5H4v14l4-3h4m4-4 5 3-5 3Z" />
+    </svg>
+  </button>
+</div>
+<span data-speech-status role="status" class="speech-status"></span
+><span
+  class="connection-indicator"
+  data-connection
+  data-state="connecting"
+  role="status"
+  title="Connecting…"
+  ><svg
+    viewBox="0 0 24 24"
+    width="19"
+    height="19"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    aria-hidden="true"
+  >
+    <path d="M4 9a12 12 0 0 1 16 0M7 12a7 7 0 0 1 10 0m-7 3a3 3 0 0 1 4 0" />
+    <circle cx="12" cy="19" r=".8" /></svg
+  ><span class="sr" data-connection-label>Connecting…</span></span
+>
+<button
+  type="button"
+  class="icon-button"
+  data-open-settings
+  aria-label="Open settings"
+  title="Settings"
+>
+  <svg
+    viewBox="0 0 24 24"
+    width="19"
+    height="19"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    aria-hidden="true"
+  >
+    <path d="M4 7h16M4 17h16" />
+    <circle cx="9" cy="7" r="3" fill="var(--sidebar-bg)" />
+    <circle cx="15" cy="17" r="3" fill="var(--sidebar-bg)" />
+  </svg>
+</button>

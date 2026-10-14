@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');require('../static/voice-profiles.js');require('../static/speech.js');
+global.atob=()=>{throw Error('Recorded audio must never be decoded');};
+const context={createBuffer(c,l,rate){const data=new Float32Array(l);return {sampleRate:rate,data,getChannelData:()=>data};}};
+const item={text:'Dit is een nieuwe bijdrage, met klanken die ter plekke worden gemaakt. '.repeat(4),profile:'paper-0',messageId:'one'};
+const plan=StudioGarble.measuredVoicePlan(item),result=StudioGarble.makeGarble(context,item);
+assert.equal(plan.key,'paper');assert.ok(plan.phonemes.every(p=>p.pitch>190&&p.pitch<255),'measured warm register must not revert to 520 Hz');
+assert.ok(Math.abs(plan.phonemes[1].start-plan.phonemes[0].start-.065)<1e-9);
+assert.equal(result.cues.length,(item.text.match(/[\p{L}\p{N}]/gu)||[]).length);
+assert.equal(result.duration,plan.duration);assert.equal(result.captions.at(-1).end,result.duration);
+assert.ok(result.captions.every(c=>c.text.length<=80));assert.ok(result.cues.every(c=>c.start<c.end&&c.end<=result.duration));
+const again=StudioGarble.makeGarble(context,{...item,messageId:'two'});assert.notDeepEqual(result.buffer.data,again.buffer.data,'new messages generate a new sequence, not a fixed recording loop');
+assert.deepEqual(result.cues,plan.phonemes.map(({start,end,value})=>({start,end,value})),'mouths follow newly synthesized phonemes');
+assert.equal(StudioGarble.voiceProfile('paper-0').source,'synthesized');
+const fs=require('fs'),path=require('path');const controls=fs.readFileSync(path.join(__dirname,'../static/voice-profiles.js'),'utf8');assert.ok(controls.length<12000);assert.ok(!controls.includes('pcm'));
+console.log('Paper: measured register/cadence, fresh message synthesis, no PCM decoding, matching phonemes and captions passed');

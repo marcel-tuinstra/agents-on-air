@@ -1,0 +1,2 @@
+# Current viewer: Python standard library only.
+# Gibberish synthesis runs locally in the browser with Web Audio.
