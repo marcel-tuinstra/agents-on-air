@@ -16,6 +16,14 @@ There is no runtime installer, download service or executable plugin code. Editi
 
 Copy one of the three built-in theme folders to a new folder, for example `themes/copper-radio`. Change `id` to `copper-radio` in `theme.json`, then edit its names, colors and audio. You can retain a built-in rig while creating a different cast and set.
 
+For a first experiment:
+
+1. Copy `themes/paper/` to `themes/my-channel/`.
+2. In the copied `theme.json`, set `id` to `my-channel` and change `name` and `shortName`.
+3. Run `python3 build.py` and refresh the studio.
+
+You can now select your new channel. Change colors or audio parameters next; keep the existing rig and artwork until that works.
+
 The ID must match the folder: lowercase letters, digits and hyphens, starting with a letter, at most 40 characters. `constructor` and `prototype` are reserved.
 
 Files in a pack:
@@ -46,4 +54,4 @@ Audio and mouth shapes use the same plan and clock. Values and array sizes are b
 
 ## Verification
 
-Run `python3 -m unittest discover -s tests -v` and the Node commands in README. Test installing a fourth pack, removing it, stale browser preferences, all eleven cast slots and both desktop and phone drawers. The built-in tests cover add/remove, invalid paths, linked assets and unchanged default voice timing.
+Run `python3 -m unittest discover -s tests -v` and the Node commands in [the development guide](docs/development.md). Test installing a fourth pack, removing it, stale browser preferences, all eleven cast slots and both desktop and phone drawers. The built-in tests cover add/remove, invalid paths, linked assets and unchanged default voice timing.

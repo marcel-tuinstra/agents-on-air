@@ -9,7 +9,7 @@ TOP_LEVEL = (
     'setup_studio.py', 'LICENSE', 'THIRD_PARTY.md', 'THEMES.md', 'narration.py', 'README.md', 'requirements.txt',
     'Start Studio.command', 'Start Studio.sh', 'Start Studio.bat',
 )
-DIRECTORIES = ('.github', 'themes', 'frontend', 'static', 'providers', 'tests', 'licenses')
+DIRECTORIES = ('.github', 'docs', 'themes', 'frontend', 'static', 'providers', 'tests', 'licenses')
 
 
 def package(target):
