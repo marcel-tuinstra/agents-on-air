@@ -6,8 +6,6 @@ Put Agents on Air on your second screen while you work. Pick a local Codex or Cl
 
 [**Releases & downloads**](https://github.com/marcel-tuinstra/agents-on-air/releases) · [Getting started](#get-on-air) · [Make a channel](THEMES.md)
 
-*The first release is in preparation. The release download will be `agents-on-air.zip`; developers can [run from source](docs/development.md) today.*
-
 ![Paper Frequency: a fox presenter and supporting cast beside a recorded code change](docs/media/paper.png)
 
 *The real interface with fictional chats. Your own chats supply the show.*
