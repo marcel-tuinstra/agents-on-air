@@ -6,6 +6,50 @@ from narration import NarrationService, NarrationError
 SNAP={'messages':[{'id':'one','role':'assistant','speaker':'Test agent','text':'De knop is aangepast.'},
                   {'id':'secret','role':'user','text':'not forwarded'}]}
 class NarrationTests(unittest.TestCase):
+    def test_team_selection_keeps_quiet_agents_and_latest_corrections(self):
+        messages = [
+            {'id':'sam-fail','agentId':'sam','speaker':'Sam','role':'assistant','at':1,'text':'Mobile test failed.'},
+            {'id':'sam-pass','agentId':'sam','speaker':'Sam','role':'assistant','at':2,'text':'Mobile test now passes.'},
+            {'id':'noor','agentId':'noor','speaker':'Noor','role':'assistant','at':3,'text':'Menu issue remains open.'},
+        ] + [dict(id=f'mira-{i}', agentId='mira', speaker='Mira', role='assistant', at=i+4,
+                  text=f'Layout update {i}.') for i in range(10)]
+        source, ids = NarrationService({}).source({'messages':messages})
+        records = json.loads(source)
+        self.assertEqual(len(records), 8)
+        self.assertIn('sam-pass', ids)
+        self.assertIn('noor', ids)
+        self.assertIn('mira-9', ids)
+        self.assertEqual([r['at'] for r in records], sorted(r['at'] for r in records))
+        self.assertEqual(records[0]['agentId'], 'sam')
+        self.assertEqual(records[0]['messageId'], 'sam-pass')
+
+    def test_source_window_is_bounded_and_ignores_empty_or_private_records(self):
+        messages = [dict(id=str(i), agentId=str(i), speaker='Same display name',
+                         role='assistant', text=f'Record {i}', at=i) for i in range(40)]
+        messages += [{'id':'empty','role':'assistant','text':'  '},
+                     {'id':'user','role':'user','text':'private'},
+                     {'id':'tool','role':'tool','text':'private'}]
+        records, ids = NarrationService({}).source({'messages':messages})
+        self.assertEqual(ids, [str(i) for i in range(32, 40)])
+        self.assertNotIn('private', records)
+        with self.assertRaises(NarrationError):
+            NarrationService({}).source({'messages':messages[-3:]})
+        # A quiet agent outside the recent window must not look like current work.
+        repeated = [dict(id=f'busy-{i}', agentId='busy', role='assistant', text='Still checking.')
+                    for i in range(32)]
+        _, ids = NarrationService({}).source({'messages':[messages[0]] + repeated})
+        self.assertEqual(ids, [f'busy-{i}' for i in range(24, 32)])
+
+    def test_long_contribution_keeps_the_final_outcome_and_marks_omission(self):
+        text = 'Started checking. ' + 'x'*4000 + ' Correction: the check failed.'
+        records, _ = NarrationService({}).source({'messages':[
+            {'id':'long','role':'assistant','speaker':'Mira','text':text}]})
+        record = json.loads(records)[0]
+        self.assertTrue(record['text'].startswith('Started checking.'))
+        self.assertTrue(record['text'].endswith('Correction: the check failed.'))
+        self.assertLessEqual(len(record['text']), 3000)
+        self.assertTrue(record['textTruncated'])
+
     def test_settings_require_consent_and_do_not_run_a_provider(self):
         service=NarrationService({})
         payload={'mode':'byok','provider':'openai','model':'test-model','apiKey':'fake-test-key'}
@@ -107,7 +151,7 @@ class NarrationTests(unittest.TestCase):
         self.assertEqual(body['model'],'chosen-model')
         self.assertEqual(body['max_tokens'],600)
         self.assertEqual(json.loads(body['messages'][0]['content']),
-                         [{'speaker':'Test agent','text':'De knop is aangepast.'}])
+                         [{'messageId':'one','speaker':'Test agent','text':'De knop is aangepast.'}])
 
     def test_codex_cli_consumes_completed_messages_and_rejects_failed_exit(self):
         service=NarrationService({'STUDIO_NARRATION_MODE':'cli','STUDIO_NARRATION_PROVIDER':'codex',

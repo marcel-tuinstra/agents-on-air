@@ -43,9 +43,13 @@ Choose one of two optional routes:
 - **Local CLI:** Codex or Claude Code must be installed and signed in. The settings page reports whether the executable was found. A model ID is optional. The separate session runs in an empty temporary directory with tools, hooks and integrations disabled. API-key environment variables are not forwarded to the CLI. The selected CLI still uses its configured account and may process text in the cloud.
 - **Your API key:** choose OpenAI or Anthropic, enter the exact model ID and your key. The key goes only to the local server and then to that selected provider when you request an update. It is not returned by the settings API, logged or stored in browser storage.
 
-An optional **Presentation direction** controls tone and emphasis. The shared instruction asks for a short, attributed update that preserves uncertainty and unfinished work.
+The presenter names the contributors, explains what changed and mentions open work or decisions in two or three short sentences. A single contribution may need only one sentence. Later reports take precedence over earlier reports about the same work; a failed check that someone fixed should not become a current blocker.
 
-Confirm the processing/usage notice and save. Saving makes **Create studio update** available in the studio; it does **not** start a model call. Each press sends up to eight recent visible agent messages, capped at 3,000 characters each, to the selected method. No user messages, hidden reasoning or binary attachments are added. Visible agent text can still contain project information. The result is labeled **AI studio update**, displayed as captions and optionally played as gibberish. The original transcript remains intact. There is no automatic processing or silent fallback between methods.
+An optional **Presentation direction** controls language, tone and emphasis. For example: “Present in Dutch. Use three short sentences. Name the contributors and any open decisions.” Without a language instruction, the presenter follows the latest selected message. Updates describe recorded reports, which may no longer reflect what an agent is doing now.
+
+Confirm the processing/usage notice and save. Saving makes **Create studio update** available in the studio; it does **not** start a model call. Each press selects up to eight messages from the last 32 nonempty visible agent contributions. Each contributor gets their latest message included before spare slots fill with recent context. If more than eight agents contributed, the eight most recent contributors take priority. This keeps a busy lead agent from crowding out the rest of the cast, while keeping the input bounded.
+
+The request preserves message order, speaker identities, timestamps and source message IDs. Messages over 3,000 characters retain their beginning and end, with the omitted middle marked. No user messages, hidden reasoning or binary attachments are added. Visible agent text can still contain project information. The result is labeled **AI studio update**, displayed as captions and optionally played as gibberish. The original transcript remains intact. There is no automatic processing or silent fallback between methods.
 
 Settings and keys live in server memory for the current server session. A blank key retains an existing key only for the same BYOK provider. Turning custom updates off clears the in-memory key. Restarting restores the launch configuration.
 
@@ -56,6 +60,8 @@ Environment configuration is also supported: `STUDIO_NARRATION_MODE=off|cli|byok
 On 15 October 2026, a live test through the narration adapter succeeded with Codex CLI 0.162.1 and a fictional agent contribution. Claude Code 2.1.287 was installed but signed out, so a live Claude result remains unverified. Install detection in Settings does not verify account sign-in.
 
 On the same date, OpenAI BYOK succeeded with `gpt-4.1-mini` through the authenticated Settings and studio-update HTTP routes, using a fictional contribution and a user-authorized key held in memory for the test. The response retained its source message ID; disabling custom updates cleared the key. Anthropic request/response handling has mock coverage, but a live Anthropic API call remains unverified. A successful test does not validate another account, key or model entered in Settings.
+
+A follow-up live check used three fictional contributors, including a quiet tester, an open decision and ten repeated layout updates. Both Codex CLI and OpenAI BYOK included all three contributors, kept the corrected test outcome and the open decision, and followed a Dutch presentation direction despite English source messages. The OpenAI check used the authenticated Settings and update routes again. These checks demonstrate those scenarios, not a guarantee that a model will summarize every conversation correctly.
 
 ## Data and privacy
 
