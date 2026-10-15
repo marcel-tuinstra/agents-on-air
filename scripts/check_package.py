@@ -26,11 +26,12 @@ def check_package(archive_path):
         claude.mkdir()
         env = {key: value for key, value in os.environ.items()
                if not key.startswith('STUDIO_NARRATION_') and key != 'PYTHONPATH'}
-        env.update(PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1',
+        env.update(PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1', PYTHONIOENCODING='utf-8',
                    CODEX_HOME=str(codex), CLAUDE_CONFIG_DIR=str(claude))
         # --help exercises the real launcher without opening a browser in CI.
         help_result = subprocess.run([sys.executable, '-I', str(app / 'start_studio.py'), '--help'],
-                                     cwd=cwd, env=env, capture_output=True, text=True, timeout=15)
+                                     cwd=cwd, env=env, capture_output=True, text=True,
+                                     encoding='utf-8', timeout=15)
         if help_result.returncode or '--codex-home' not in help_result.stdout:
             raise ValueError('ZIP launcher failed its startup check.')
         with (base / 'server.log').open('w+', encoding='utf-8') as log:

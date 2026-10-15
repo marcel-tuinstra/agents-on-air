@@ -212,6 +212,12 @@ class VerificationPaths(unittest.TestCase):
                     for name in ('agents-on-air/.githooks/pre-commit',
                                  'agents-on-air/.githooks/pre-push'):
                         self.assertTrue((archive.getinfo(name).external_attr >> 16) & 0o111)
+            with patch.dict(os.environ, {'PYTHONIOENCODING': 'cp1252',
+                                         'STUDIO_NARRATION_MODE': 'byok',
+                                         'STUDIO_NARRATION_PROVIDER': 'openai',
+                                         'STUDIO_NARRATION_MODEL': 'fixture',
+                                         'STUDIO_NARRATION_API_KEY': 'synthetic-test-only'}):
+                verify.check_package(target)
         after = {path.relative_to(static): (path.stat().st_size, path.stat().st_mtime_ns)
                  for path in static.rglob('*') if path.is_file()}
         self.assertEqual(before, after)
