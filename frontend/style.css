@@ -704,6 +704,12 @@ body {
   background: transparent;
   border-color: transparent;
 }
+#studio-hub .caption-actions [data-caption-retention] {
+  margin-right: auto;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: left;
+}
 #studio-hub .caption-actions button:hover {
   border-color: var(--line);
 }

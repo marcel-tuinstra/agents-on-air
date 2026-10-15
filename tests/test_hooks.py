@@ -180,13 +180,15 @@ class VerificationPaths(unittest.TestCase):
         with patch.object(verify, 'build') as build, \
              patch.object(verify, 'compare_generated') as compare, \
              patch.object(verify, 'command'), \
-             patch.object(verify, 'package') as package:
+             patch.object(verify, 'package') as package, \
+             patch.object(verify, 'check_package') as install:
             verify.verify()
         generated = build.call_args.args[0]
         self.assertNotEqual(generated, verify.ROOT / 'static')
         self.assertEqual(compare.call_args.args[0], generated)
         self.assertEqual(package.call_args.kwargs['static_source'], generated)
         self.assertNotEqual(package.call_args.args[0].parent, verify.ROOT)
+        install.assert_called_once_with(package.call_args.args[0])
 
     def test_real_build_and_zip_leave_static_files_untouched(self):
         static = verify.ROOT / 'static'
@@ -210,6 +212,12 @@ class VerificationPaths(unittest.TestCase):
                     for name in ('agents-on-air/.githooks/pre-commit',
                                  'agents-on-air/.githooks/pre-push'):
                         self.assertTrue((archive.getinfo(name).external_attr >> 16) & 0o111)
+            with patch.dict(os.environ, {'PYTHONIOENCODING': 'cp1252',
+                                         'STUDIO_NARRATION_MODE': 'byok',
+                                         'STUDIO_NARRATION_PROVIDER': 'openai',
+                                         'STUDIO_NARRATION_MODEL': 'fixture',
+                                         'STUDIO_NARRATION_API_KEY': 'synthetic-test-only'}):
+                verify.check_package(target)
         after = {path.relative_to(static): (path.stat().st_size, path.stat().st_mtime_ns)
                  for path in static.rglob('*') if path.is_file()}
         self.assertEqual(before, after)

@@ -14,6 +14,8 @@ After **one hour** without activity, the lights dim and the presenter dozes or t
 
 Speech bubbles show the current speaker’s words, even when muted. Supporting agents appear beside their own bubble; generated summaries are marked **AI studio update** beside the lead. Use the bubble’s arrows to reread a passage, or pause both text and sound. The final bubble stays for four seconds; pausing, rereading or focusing its controls keeps it visible. Open the transcript for the original messages. The transcript supports Markdown and holds up to 200 messages.
 
+Playback retains up to 200 contributions. During a busy session, older entries leave the playback queue; the passage you are reading stays in place. A link in the bubble opens the recent transcript. For older messages beyond that transcript, return to the source app. This limit counts contributions, not characters: long messages stay complete.
+
 Browse recorded images and patches with the arrows beneath the work screen. Each contribution retains its author and source. Claude edit requests appear as proposals. Before/after images need a pair recorded by the source. Shell edits appear as diffs only if the source records a patch.
 
 The cast supports a lead presenter, five detailed supporting characters and five silhouettes. The lead presenter can work alone.

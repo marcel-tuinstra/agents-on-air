@@ -531,6 +531,10 @@
       this.pump();
       return true;
     }
+    retainCaptions(records) {
+      const retained = new Set(records.map((record) => record.id));
+      this.queue = this.queue.filter((item) => !item.captionRecordId || retained.has(item.captionRecordId));
+    }
     offer(m, agents = [], manual = false, previousText, captionRecordId) {
       if (!this.enabled) return;
       const plainText = StudioText.plainText(m.text),
@@ -548,7 +552,9 @@
           if (text.startsWith(old)) rawSpoken = text.slice(old.length);
           else return;
         }
+        this.known.delete(m.id);
         this.known.set(m.id, text);
+        if (this.known.size > 200) this.known.delete(this.known.keys().next().value);
       }
       const leading = rawSpoken.length - rawSpoken.trimStart().length,
         spoken = rawSpoken.trim();

@@ -513,7 +513,7 @@
             .filter((m) => m.role === "assistant")
             .at(-1);
           if (latest) {
-            captions.append(StudioText.plainText(latest.text), {
+            appendCaption(StudioText.plainText(latest.text), {
               speaker: latest.speaker,
               at: latest.at,
               messageId: latest.id,
@@ -561,6 +561,11 @@
       },
     });
   }
+  function appendCaption(...args) {
+    const id = captions.append(...args);
+    speech.retainCaptions(captions.records);
+    return id;
+  }
   function enqueueCaption(m, old) {
     const full = StudioText.plainText(m.text);
     const previous = old === undefined ? "" : StudioText.plainText(old);
@@ -568,7 +573,7 @@
       previous && full.startsWith(previous)
         ? full.slice(previous.length)
         : full;
-    return captions.append(added, {
+    return appendCaption(added, {
       speaker: m.speaker, at: m.at, messageId: m.id, agentId: m.agentId,
     }, performance.now());
   }
@@ -591,7 +596,7 @@
   }
   async function replayMessage(m) {
     const epoch = captionEpoch;
-    const id = captions.append(StudioText.plainText(m.text), {
+    const id = appendCaption(StudioText.plainText(m.text), {
       speaker: m.speaker, at: m.at, messageId: m.id, agentId: m.agentId,
     }, performance.now());
     if (!id) return;
@@ -750,6 +755,7 @@
     const c = captions.resolve(current),
       text = c?.text || "";
     renderCaptionText(text);
+    q("[data-caption-retention]").hidden = !captions.trimmed;
     q("[data-caption-speaker]").textContent = c?.speaker || "";
     const at = c?.at || snapshot?.messages.find((m) => m.id === c?.messageId)?.at;
     q("[data-caption-time]").textContent = at
@@ -1100,6 +1106,9 @@
   q("[data-open-transcript]").addEventListener("click", (e) =>
     openTranscript(e.currentTarget),
   );
+  q("[data-caption-retention]").addEventListener("click", (e) =>
+    openTranscript(e.currentTarget),
+  );
   q("[data-close-transcript]").addEventListener("click", () =>
     closePanel("transcript"),
   );
@@ -1222,7 +1231,7 @@
         "AI studio update · on request · original contributions in transcript";
       const main = snapshot?.agents.find((a) => a.isMain),
         at = Number(data.createdAt) || Date.now() / 1000;
-      const narrationCaptionId = captions.append(StudioText.plainText(data.text || ""), {
+      const narrationCaptionId = appendCaption(StudioText.plainText(data.text || ""), {
         speaker: "AI studio update", at, messageId: null,
         agentId: main?.id || null, origin: "narration",
       }, performance.now());

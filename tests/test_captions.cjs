@@ -79,3 +79,30 @@ model.reset();
 assert.equal(model.current, null);
 assert.equal(model.visible, false);
 console.log('Caption fitting, sequential stream, expiry, history and stale audio: passed');
+
+// A second-screen session must retain the selected passage without growing forever.
+let fitted = 0;
+const bounded = new StudioCaptionModel(text => { fitted++; return [text]; });
+bounded.append('A passage held for rereading.', {messageId:'held'}, 0);
+bounded.setPaused(true, 0);
+for (let i = 0; i < 10000; i++)
+  bounded.append('Live update '+i, {messageId:'live-'+i}, i);
+assert.ok(bounded.records.length <= 200, 'caption history has a fixed record budget');
+assert.equal(bounded.current.messageId, 'held', 'overflow must preserve held reading');
+assert.equal(bounded.records.at(-1).meta.messageId, 'live-9999');
+assert.equal(fitted, 10001, 'arrival only fits the new message, not the entire history');
+assert.ok(bounded.trimmed > 0, 'overflow is disclosed to the viewer');
+assert.equal(bounded.items.map(x=>x.text).join(''), bounded.records.map(x=>x.text).join(''));
+bounded.setPaused(false, 10001);
+bounded.tick(20000);
+assert.equal(bounded.current.messageId, 'live-9801', 'resume visits the retained queue in order');
+bounded.reflow(20001);
+assert.equal(bounded.current.messageId, 'live-9801');
+bounded.reset();
+assert.equal(bounded.trimmed, 0);
+assert.equal(bounded.records.length, 0);
+const expired = new StudioCaptionModel(text => [text]);
+for (let i=0;i<1000;i++) { expired.append('Update '+i,{messageId:String(i)},i*5000); expired.tick(i*5000+4001); }
+assert.equal(expired.current.messageId,'999');
+assert.equal(expired.visible,false);
+console.log('Long session: bounded history, held reading, incremental fitting and expiry passed');
