@@ -471,7 +471,7 @@ body {
 #studio-hub .desk {
   position: absolute;
   inset: 0;
-  background-image: var(--studio-image, url("/studios.webp"));
+  background-image: var(--studio-image, none);
   background-size: auto 309%;
   background-position: 50% var(--set-y, 0%);
   background-repeat: no-repeat;
@@ -600,47 +600,137 @@ body {
   background: var(--bg);
   font-size: 11px;
 }
-#studio-hub .caption-bar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  column-gap: 18px;
-  padding: 8px clamp(16px, 2vw, 32px) 6px;
-  min-height: 78px;
-  align-items: center;
+/* The dialogue sits next to its speaker, outside the scenery's layering. */
+#studio-hub .work-screen {
+  grid-column: 1;
+  grid-row: 1;
+}
+#studio-hub .cast-set {
+  display: flex;
+  flex-direction: column;
+  grid-column: 2;
+  grid-row: 1;
+}
+#studio-hub .cast-scene {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex: 1;
+  min-height: 260px;
+  container-type: size;
+}
+#studio-hub .cast-scene [data-host] {
+  max-width: 65cqh;
+}
+#studio-hub .dialogue-lane {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  padding: 16px 12px 12px;
+  min-height: 172px;
+  background: var(--sidebar-bg);
+}
+#studio-hub .speech-bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px 6px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--ink);
+}
+#studio-hub .speech-bubble::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  left: 28px;
+  width: 16px;
+  height: 16px;
+  transform: rotate(45deg);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+#studio-hub .speech-bubble[data-speaker-kind="subagent"]::before {
+  top: auto;
+  bottom: 35px;
+  left: -9px;
+  transform: rotate(-45deg);
+}
+#studio-hub .bubble-speaker {
+  flex: 0 0 64px;
+  min-width: 0;
+  text-align: center;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+#studio-hub .bubble-speaker canvas {
+  display: block;
+  width: 64px;
+  height: 64px;
 }
 #studio-hub .caption-meta {
-  grid-column: 1;
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
   align-items: baseline;
+  gap: 4px 10px;
   font-size: 12px;
 }
 #studio-hub .caption-meta span {
   color: var(--muted);
 }
 #studio-hub [data-caption-text] {
-  grid-column: 1;
-  grid-row: 2;
-  margin: 2px 0 0;
-  max-width: 70ch;
-  font-size: clamp(16px, 1.35vw, 19px);
-  line-height: 1.25;
-  min-height: 2.5em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  margin: 6px 0;
+  font-size: 16px;
+  line-height: 1.4;
+  min-height: 2.8em;
   overflow-wrap: anywhere;
+  white-space: normal;
 }
 #studio-hub .caption-actions {
-  grid-column: 2;
-  grid-row: 1/3;
   display: flex;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 4px;
 }
 #studio-hub .caption-actions button {
-  font-size: 11px;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  background: transparent;
+  border-color: transparent;
+}
+#studio-hub .caption-actions button:hover {
+  border-color: var(--line);
+}
+#studio-hub .play-icon, #studio-hub [data-paused="true"] .pause-icon {
+  display: none;
+}
+#studio-hub [data-paused="true"] .play-icon {
+  display: block;
+}
+#studio-hub .cast-member[data-caption-active="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 var(--accent);
+}
+#studio-hub[data-theme="paper"] .speech-bubble {
+  border-radius: 3px 14px 4px 10px;
+  box-shadow: 3px 3px 0 var(--line);
+}
+#studio-hub[data-theme="pocket"] .speech-bubble {
+  border-radius: 0;
+  border-width: 2px;
+  box-shadow: 4px 4px 0 var(--bg);
+}
+#studio-hub[data-theme="pocket"] .bubble-speaker canvas {
+  image-rendering: pixelated;
+}
+#studio-hub[data-theme="pocket"] [data-caption-text] {
+  font-size: 14px;
 }
 #studio-hub .room-foot {
   min-height: 24px;
@@ -932,7 +1022,7 @@ body {
 }
 #studio-hub[data-view="ambient"] .stage {
   min-height: 260px;
-  max-height: 34vh;
+  height: 440px;
   flex: none;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 30%);
 }
@@ -945,9 +1035,6 @@ body {
 #studio-hub[data-view="ambient"] .work-lead {
   font-size: 16px;
   -webkit-line-clamp: 3;
-}
-#studio-hub[data-view="ambient"] .caption-bar {
-  min-height: 90px;
 }
 #studio-hub[data-view="ambient"] .cast-list {
   display: none;
@@ -1098,9 +1185,9 @@ body {
     font-size: 18px;
     -webkit-line-clamp: 5;
   }
-  #studio-hub .cast-set {
+  #studio-hub .cast-scene {
     height: 260px;
-    min-height: 260px;
+    flex: none;
   }
   #studio-hub .cast-list {
     width: 38%;
@@ -1110,25 +1197,26 @@ body {
     width: 52%;
     left: 12%;
   }
-  #studio-hub .caption-bar {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-    padding: 14px;
-    gap: 5px;
-    order: 0;
+  #studio-hub .dialogue-lane {
+    flex-direction: column;
+    align-items: stretch;
   }
-  #studio-hub [data-caption-text] {
-    grid-column: 1;
-    grid-row: 2;
-    font-size: 17px;
+  #studio-hub .bubble-speaker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    text-align: left;
   }
-  #studio-hub .caption-actions {
-    grid-column: 1;
-    grid-row: 3;
-    justify-content: space-between;
+  #studio-hub .bubble-speaker canvas {
+    width: 48px;
+    height: 48px;
   }
-  #studio-hub .caption-actions button {
-    min-height: 44px;
+  #studio-hub .speech-bubble[data-speaker-kind="subagent"]::before {
+    top: -9px;
+    bottom: auto;
+    left: 28px;
+    transform: rotate(45deg);
   }
   #studio-hub .room-foot {
     padding: 14px;
@@ -1147,6 +1235,7 @@ body {
   }
   #studio-hub[data-view="ambient"] .stage {
     max-height: none;
+    height: auto;
   }
   #studio-hub[data-view="ambient"] .work-screen {
     min-height: 180px;
@@ -1154,7 +1243,7 @@ body {
   #studio-hub[data-view="ambient"] .work-screen-content {
     min-height: 120px;
   }
-  #studio-hub[data-view="ambient"] .cast-set {
+  #studio-hub[data-view="ambient"] .cast-scene {
     height: 150px;
     min-height: 150px;
   }

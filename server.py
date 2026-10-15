@@ -108,7 +108,6 @@ class Handler(BaseHTTPRequestHandler):
                   '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
                   '/settings.js': ('settings.js', 'text/javascript; charset=utf-8'),
                   '/style.css': ('style.css', 'text/css; charset=utf-8'),
-                  '/cast.webp': ('cast.webp', 'image/webp'), '/studios.webp': ('studios.webp', 'image/webp'),
                   '/marked.js': ('marked.js', 'text/javascript; charset=utf-8'), '/purify.js': ('purify.js', 'text/javascript; charset=utf-8'),
                   '/markdown.js': ('markdown.js', 'text/javascript; charset=utf-8'),
                   '/speech.js': ('speech.js', 'text/javascript; charset=utf-8'),
@@ -118,7 +117,7 @@ class Handler(BaseHTTPRequestHandler):
                   '/openai.svg': ('openai.svg', 'image/svg+xml'), '/anthropic.svg': ('anthropic.svg', 'image/svg+xml')}
         for font in ('Lora', 'Nunito', 'PixelifySans'):
             assets['/fonts/'+font+'.ttf'] = ('fonts/'+font+'.ttf', 'font/ttf')
-        for module in ('rig', 'controllers', 'stream', 'work-view'):
+        for module in ('rig', 'controllers', 'stream', 'work-view', 'captions'):
             assets['/'+module+'.js'] = (module+'.js', 'text/javascript; charset=utf-8')
         for name, kind in {'lab.js':'text/javascript', 'rig.js':'text/javascript', 'lab.css':'text/css'}.items():
             assets['/voice-lab/'+name] = ('voice-lab/'+name, kind)

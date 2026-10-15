@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+hook_dir=${0%/*}
+root=$(CDPATH= cd -- "$hook_dir/.." && pwd)
+if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))'; then
+    exec python3 "$root/scripts/check_staged.py"
+fi
+if command -v py >/dev/null 2>&1 && py -3 -c 'import sys; sys.exit(sys.version_info < (3, 9))'; then
+    exec py -3 "$root/scripts/check_staged.py"
+fi
+if command -v python >/dev/null 2>&1 && python -c 'import sys; sys.exit(sys.version_info < (3, 9))'; then
+    exec python "$root/scripts/check_staged.py"
+fi
+printf '%s\n' 'pre-commit: Python 3.9+ is required; no checks were run.' >&2
+exit 1

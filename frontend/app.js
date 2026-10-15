@@ -35,13 +35,51 @@
     activeWorkMessageId = null;
   let filter = "all",
     expanded = false,
-    captionItems = [],
-    captionIndex = -1,
-    captionPaused = false,
-    readingHistory = false,
-    captionUntil = 0,
     seen = null,
     initialSnapshot = true;
+  const captionText = q("[data-caption-text]"),
+    captionBubble = q(".speech-bubble"),
+    captionCanvas = document.createElement("canvas"),
+    captionMeasure = captionCanvas.getContext("2d");
+  function captionWidth() {
+    const style = getComputedStyle(captionText);
+    captionMeasure.font = style.font;
+    const liveWidth = captionText.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0),
+      laneWidth = captionBubble.parentElement?.clientWidth || 0,
+      width = liveWidth > 0 ? liveWidth : Math.max(120, laneWidth - 130);
+    return Math.max(20, width - 6);
+  }
+  function measuredCaptionFit(text, lines = 2) {
+    const style = getComputedStyle(captionText),
+      spacing = Number.parseFloat(style.letterSpacing) || 0;
+    return StudioCaptionFit(text, captionWidth(), (part) =>
+      captionMeasure.measureText(part).width + Math.max(0, Array.from(part).length - 1) * spacing, lines);
+  }
+  function captionSegments(text) {
+    return measuredCaptionFit(text);
+  }
+  function renderCaptionText(text) {
+    if (captionText.textContent === text && captionText.dataset.renderedWidth === String(captionWidth())) return;
+    const fragment = document.createDocumentFragment();
+    for (const line of measuredCaptionFit(text, 1)) {
+      const row = document.createElement("span");
+      row.style.display = "block";
+      row.style.whiteSpace = "nowrap";
+      row.textContent = line;
+      fragment.append(row);
+    }
+    captionText.replaceChildren(fragment);
+    captionText.dataset.renderedWidth = String(captionWidth());
+  }
+  const captions = new StudioCaptionModel(captionSegments);
+  let audioWasActive = false,
+    captionEpoch = 0;
+  function clearCaptions() {
+    captionEpoch++;
+    if (captionBubble.contains(document.activeElement)) document.activeElement.blur();
+    captions.reset();
+    updateCaption();
+  }
   let narrationConfig = {
       enabled: false,
       mode: "off",
@@ -353,10 +391,7 @@
     snapshot = null;
     seen = null;
     initialSnapshot = true;
-    captionItems = [];
-    captionIndex = -1;
-    captionPaused = false;
-    readingHistory = false;
+    clearCaptions();
     focusAgent = null;
     activeWorkArtifact = null;
     activeWorkMessageId = null;
@@ -386,8 +421,7 @@
     snapshot = null;
     seen = null;
     speech.reset();
-    captionItems = [];
-    captionIndex = -1;
+    clearCaptions();
     rosterKey = null;
     displayAgents = [];
     q("[data-cast-list]").replaceChildren();
@@ -471,29 +505,20 @@
                 performance.now() + StudioText.speechDuration(m.text),
               );
               arrivedAt.set(m.agentId, performance.now());
-              enqueueCaption(m, previous.get(m.id));
-              speech.offer(m, incoming.agents, false, previous.get(m.id));
+              const captionId = enqueueCaption(m, previous.get(m.id));
+              speech.offer(m, incoming.agents, false, previous.get(m.id), captionId);
             }
         } else if (initialSnapshot) {
           const latest = (incoming.messages || [])
             .filter((m) => m.role === "assistant")
             .at(-1);
           if (latest) {
-            const parts = StudioStage.captionParts(
-              StudioText.plainText(latest.text),
-            );
-            if (parts.length) {
-              captionItems = [
-                {
-                  text: parts.at(-1),
-                  speaker: latest.speaker,
-                  at: latest.at,
-                  messageId: latest.id,
-                  agentId: latest.agentId,
-                },
-              ];
-              captionIndex = 0;
-            }
+            captions.append(StudioText.plainText(latest.text), {
+              speaker: latest.speaker,
+              at: latest.at,
+              messageId: latest.id,
+              agentId: latest.agentId,
+            }, performance.now(), { initial: true });
           }
           initialSnapshot = false;
         }
@@ -543,27 +568,47 @@
       previous && full.startsWith(previous)
         ? full.slice(previous.length)
         : full;
-    const result = StudioStage.appendCaptionParts(
-      { items: captionItems, index: captionIndex, paused: captionPaused },
-      StudioStage.captionParts(added),
-      { speaker: m.speaker, at: m.at, messageId: m.id, agentId: m.agentId },
-    );
-    captionItems = result.items;
-    captionIndex = result.index;
-    if (result.changed)
-      captionUntil =
-        performance.now() + captionHold(captionCurrent()?.text || "");
-  }
-  function captionHold(s) {
-    return Math.min(7000, Math.max(2500, String(s).split(/\s+/).length * 260));
+    return captions.append(added, {
+      speaker: m.speaker, at: m.at, messageId: m.id, agentId: m.agentId,
+    }, performance.now());
   }
   function captionCurrent() {
-    return captionItems[captionIndex] || null;
+    return captions.current;
+  }
+  async function resumeCaptions() {
+    const epoch = captionEpoch;
+    const selectedCaption = captions.current,
+      fromHistory = captions.history;
+    captions.setPaused(false, performance.now());
+    if (fromHistory && selectedCaption)
+      await speech.restartFrom(captions.records, selectedCaption);
+    else if (speech.mode !== "off" && speech.paused)
+      await speech.pause();
+    if (epoch !== captionEpoch) return false;
+    updateCaption();
+    if (snapshot) renderWork();
+    return true;
+  }
+  async function replayMessage(m) {
+    const epoch = captionEpoch;
+    const id = captions.append(StudioText.plainText(m.text), {
+      speaker: m.speaker, at: m.at, messageId: m.id, agentId: m.agentId,
+    }, performance.now());
+    if (!id) return;
+    const selectedCaption = captions.items.find((item) => item.id === id);
+    captions.index = captions.items.indexOf(selectedCaption);
+    captions.setPaused(false, performance.now());
+    updateCaption();
+    await speech.restartFrom(captions.records.filter((record) => record.id === id), selectedCaption);
+    if (epoch !== captionEpoch) return;
+    updateCaption();
+    renderWork();
   }
   function speaking(id) {
-    return !speech.enabled || speech.needsGesture
-      ? online && (talkUntil.get(id) || 0) > performance.now()
-      : speech.speaking(id);
+    if (speech.enabled && speech.context?.state === "running" && !speech.failed && speech.mode !== "off")
+      return speech.speaking(id);
+    return online && !captions.paused && !captions.history && captions.visible &&
+      captions.current?.agentId === id && performance.now() < captions.due;
   }
   function sprite(agent) {
     if (agent?.isMain) return 0;
@@ -657,6 +702,7 @@
         : statusLabel(a.status);
       card.dataset.speaking = String(speaking(a.id));
     }
+    updateCaption();
     q("[data-cast-empty]").hidden = !!others.length;
     q("[data-hostname]").textContent =
       (main?.model || "Lead agent") + " · lead agent";
@@ -671,7 +717,7 @@
   }
   function currentMessage() {
     const c = captionCurrent();
-    if (readingHistory && c?.messageId) {
+    if (captions.history && c?.messageId) {
       const m = snapshot.messages.find((x) => x.id === c.messageId);
       if (m) return m;
     }
@@ -698,43 +744,55 @@
     workView.render(snapshot, currentMessage(), selected, focusAgent);
   }
   function updateCaption() {
-    const current = speech.current,
-      spoken =
-        current?.playing && current.caption && !readingHistory ? current : null,
-      c = captionCurrent(),
-      spokenParts = spoken ? StudioStage.captionParts(current.caption) : [];
-    const text = spoken
-      ? spokenParts[
-          Math.min(
-            spokenParts.length - 1,
-            Math.floor((current.captionProgress || 0) * spokenParts.length),
-          )
-        ]
-      : c?.text || "No recorded agent contribution yet.";
-    if (q("[data-caption-text]").textContent !== text)
-      q("[data-caption-text]").textContent = text;
-    q("[data-caption-speaker]").textContent = spoken
-      ? current.speaker || "Agent"
-      : c?.speaker || "Studio";
-    const at = spoken
-      ? snapshot?.messages.find((m) => m.id === current.messageId)?.at || c?.at
-      : c?.at;
+    const current = speech.current;
+    if (speech.context?.state === "running" && !speech.paused && !speech.failed)
+      captions.alignAudio(current);
+    const c = captions.resolve(current),
+      text = c?.text || "";
+    renderCaptionText(text);
+    q("[data-caption-speaker]").textContent = c?.speaker || "";
+    const at = c?.at || snapshot?.messages.find((m) => m.id === c?.messageId)?.at;
     q("[data-caption-time]").textContent = at
       ? new Intl.DateTimeFormat("en-GB", {
           hour: "2-digit",
           minute: "2-digit",
         }).format(at * 1000)
       : "";
-    q("[data-caption-back]").disabled = captionIndex <= 0;
+    captionBubble.hidden = !captions.visible && !captionBubble.contains(document.activeElement);
+    const agent = snapshot?.agents?.find((a) => a.id === c?.agentId);
+    captionBubble.dataset.speakerKind = agent && !agent.isMain && c?.origin !== "narration" ? "subagent" : "lead";
+    captionBubble.dataset.speakerId = c?.agentId || "";
+    const bubbleSpeaker = q("[data-bubble-speaker]");
+    if (bubbleSpeaker) {
+      bubbleSpeaker.hidden = captionBubble.hidden || captionBubble.dataset.speakerKind !== "subagent";
+      q("[data-bubble-name]").textContent = agent?.name || c?.speaker || "";
+    }
+    for (const card of q("[data-cast-list]").children)
+      card.dataset.captionActive = String(!captionBubble.hidden && captionBubble.dataset.speakerKind === "subagent" && card.dataset.uid === c?.agentId);
+    q("[data-caption-back]").disabled = captions.index <= 0;
     q("[data-caption-next]").disabled =
-      captionIndex < 0 || captionIndex >= captionItems.length - 1;
-    q("[data-caption-pause]").setAttribute(
-      "aria-pressed",
-      String(captionPaused),
-    );
-    q("[data-caption-pause]").textContent = captionPaused
-      ? "Resume captions"
-      : "Pause captions";
+      captions.index < 0 || captions.index >= captions.items.length - 1;
+    const pause = q("[data-caption-pause]");
+    pause.setAttribute("aria-pressed", String(captions.paused));
+    pause.dataset.paused = String(captions.paused);
+    pause.setAttribute("aria-label", captions.paused ? "Resume captions" : "Pause captions");
+    pause.title = pause.getAttribute("aria-label");
+    refreshCastSpeaking();
+  }
+  function refreshCastSpeaking() {
+    if (!snapshot) return;
+    for (const card of q("[data-cast-list]").children) {
+      const agent = snapshot.agents.find((a) => a.id === card.dataset.uid);
+      if (!agent) continue;
+      const active = speaking(agent.id);
+      card.dataset.speaking = String(active);
+      card.querySelector("small").textContent = active ? "Speaking" : statusLabel(agent.status);
+    }
+    const main = snapshot.agents.find((a) => a.isMain);
+    q("[data-host-status]").textContent =
+      root.dataset.room === "waiting" ? "Waiting for activity" :
+      root.dataset.room === "offline" ? "Disconnected" :
+      main && speaking(main.id) ? "Speaking" : statusLabel(main?.status);
   }
   function renderTranscript() {
     if (!snapshot) return;
@@ -789,9 +847,7 @@
         play.className = "read-message";
         play.textContent = "Play";
         play.disabled = !speech.enabled;
-        play.addEventListener("click", () =>
-          speech.offer(m, snapshot.agents, true),
-        );
+        play.addEventListener("click", () => { void replayMessage(m); });
         body.append(play);
       }
       body.append(text);
@@ -865,7 +921,7 @@
       talk = !waiting && speaking(agent.id),
       ch = text[Math.floor(elapsed / 65) % Math.max(1, text.length)] || " ";
     const mouth =
-        !waiting && speech.enabled && !speech.needsGesture
+        !waiting && speech.enabled && speech.context?.state === "running" && !speech.failed && speech.current?.playing
           ? speech.mouth(agent.id)
           : null,
       amount = waiting
@@ -950,6 +1006,9 @@
       const agent = displayAgents.find((a) => a.id === card.dataset.uid);
       draw(card.querySelector("canvas"), agent);
     }
+    const active = snapshot.agents.find((a) => a.id === captionBubble.dataset.speakerId);
+    if (active && captionBubble.dataset.speakerKind === "subagent")
+      draw(q("[data-bubble-portrait]"), active);
   }
   function tick(now) {
     requestAnimationFrame(tick);
@@ -967,16 +1026,10 @@
         changed = true;
       }
     if (changed && snapshot) renderCast();
-    if (
-      !captionPaused &&
-      !speech.paused &&
-      (speech.mode === "off" || !speech.current) &&
-      captionIndex >= 0 &&
-      captionIndex < captionItems.length - 1 &&
-      now > captionUntil
-    ) {
-      captionIndex++;
-      captionUntil = now + captionHold(captionItems[captionIndex].text);
+    speech.dropUnavailableAudio();
+    const audioClockActive = speech.enabled && speech.context?.state === "running" && !speech.failed && speech.mode !== "off" &&
+      (!!speech.current?.playing || !!speech.current || speech.queue.length > 0);
+    if (captions.tick(now, audioClockActive)) {
       updateCaption();
       renderWork();
     }
@@ -984,7 +1037,7 @@
       lastRoomCheck = now;
       renderRoomState();
     }
-    if (speech.current?.playing) updateCaption();
+    if (speech.current?.playing && speech.context?.state === "running") updateCaption();
   }
   const speech = new StudioSpeech(
     () => {
@@ -1010,6 +1063,14 @@
         !snapshot?.messages?.some((m) => m.role === "assistant");
       q("[data-speech-status]").textContent = speech.status || "";
       q("[data-speech-status]").title = speech.status || "";
+      const audioActive = speech.enabled && speech.context?.state === "running" && !speech.failed && speech.mode !== "off" &&
+        (!!speech.current?.playing || !!speech.current || speech.queue.length > 0);
+      if (audioWasActive && !audioActive && !captions.paused && !captions.history && captions.items.length) {
+        captions.due = performance.now() + (captions.index === captions.items.length - 1
+          ? 4000 : captions.hold(captions.current?.text || ""));
+        captions.expired = false;
+      }
+      audioWasActive = audioActive;
       if (snapshot) {
         renderCast();
         updateCaption();
@@ -1050,6 +1111,7 @@
     input.addEventListener("change", () => {
       if (input.checked) {
         speech.reset();
+        clearCaptions();
         theme = input.value;
         setTheme();
         save();
@@ -1075,36 +1137,44 @@
     renderTranscript();
   });
   q("[data-caption-back]").addEventListener("click", async () => {
-    if (captionIndex <= 0) return;
-    captionPaused = true;
-    readingHistory = true;
-    captionIndex--;
+    if (!captions.step(-1)) return;
+    const epoch = captionEpoch;
+    updateCaption();
     if (speech.mode !== "off" && !speech.paused) await speech.pause();
+    if (epoch !== captionEpoch) return;
     updateCaption();
     renderWork();
   });
+  captionBubble.addEventListener("focusout", () => queueMicrotask(updateCaption));
+  const reflowCaptions = () => {
+    captions.reflow(performance.now());
+    if (snapshot) updateCaption();
+  };
+  if (typeof ResizeObserver !== "undefined")
+    new ResizeObserver(reflowCaptions).observe(captionText);
+  else window.addEventListener("resize", reflowCaptions);
+  document.fonts?.ready.then(reflowCaptions);
+  document.fonts?.addEventListener?.("loadingdone", reflowCaptions);
   q("[data-caption-next]").addEventListener("click", async () => {
-    if (captionIndex < captionItems.length - 1) {
-      captionPaused = true;
-      readingHistory = true;
-      captionIndex++;
+    if (captions.step(1)) {
+      const epoch = captionEpoch;
+      updateCaption();
       if (speech.mode !== "off" && !speech.paused) await speech.pause();
-      captionUntil =
-        performance.now() + captionHold(captionItems[captionIndex].text);
+      if (epoch !== captionEpoch) return;
       updateCaption();
       renderWork();
     }
   });
   q("[data-caption-pause]").addEventListener("click", async () => {
-    captionPaused = !captionPaused;
-    if (captionPaused) {
+    const epoch = captionEpoch;
+    if (!captions.paused) {
+      captions.setPaused(true, performance.now());
+      updateCaption();
       if (speech.mode !== "off" && !speech.paused) await speech.pause();
     } else {
-      readingHistory = false;
-      if (speech.mode !== "off" && speech.paused) await speech.pause();
-      captionUntil =
-        performance.now() + captionHold(captionCurrent()?.text || "");
+      await resumeCaptions();
     }
+    if (epoch !== captionEpoch) return;
     updateCaption();
     renderWork();
   });
@@ -1114,9 +1184,14 @@
   window.addEventListener("pointerdown", () => speech.unlock());
   window.addEventListener("keydown", () => speech.unlock());
   q("[data-speech-pause]").addEventListener("click", async () => {
-    await speech.pause();
-    captionPaused = speech.paused;
-    if (!captionPaused) readingHistory = false;
+    const epoch = captionEpoch;
+    if (captions.paused) await resumeCaptions();
+    else {
+      captions.setPaused(true, performance.now());
+      updateCaption();
+      await speech.pause();
+    }
+    if (epoch !== captionEpoch) return;
     updateCaption();
     renderWork();
   });
@@ -1124,7 +1199,7 @@
   q("[data-speech-retry]").addEventListener("click", () => speech.retry());
   q("[data-speech-latest]").addEventListener("click", () => {
     const m = snapshot?.messages.filter((m) => m.role === "assistant").at(-1);
-    if (m) speech.offer(m, snapshot.agents, true);
+    if (m) void replayMessage(m);
   });
   q("[data-summarize]").addEventListener("click", async () => {
     if (!selected || !narrationConfig.enabled || narrationConfig.mode === "off")
@@ -1146,30 +1221,14 @@
       q("[data-summary-status]").textContent =
         "AI studio update · on request · original contributions in transcript";
       const main = snapshot?.agents.find((a) => a.isMain),
-        at = Number(data.createdAt) || Date.now() / 1000,
-        parts = StudioStage.captionParts(StudioText.plainText(data.text || ""));
-      if (parts.length) {
-        const result = StudioStage.appendCaptionParts(
-          {
-            items: captionItems,
-            index: captionItems.length - 1,
-            paused: false,
-          },
-          parts,
-          {
-            speaker: "AI studio update",
-            at,
-            messageId: null,
-            agentId: main?.id || null,
-            origin: "narration",
-          },
-        );
-        captionItems = result.items;
-        captionIndex = result.index;
-        captionPaused = false;
-        readingHistory = false;
-        captionUntil =
-          performance.now() + captionHold(captionCurrent()?.text || "");
+        at = Number(data.createdAt) || Date.now() / 1000;
+      const narrationCaptionId = captions.append(StudioText.plainText(data.text || ""), {
+        speaker: "AI studio update", at, messageId: null,
+        agentId: main?.id || null, origin: "narration",
+      }, performance.now());
+      if (narrationCaptionId) {
+        captions.index = captions.items.findIndex((item) => item.id === captions.records.at(-1).id);
+        captions.setPaused(false, performance.now());
         updateCaption();
       }
       if (main && speech.mode !== "off") {
@@ -1185,6 +1244,8 @@
           },
           snapshot.agents,
           true,
+          undefined,
+          narrationCaptionId,
         );
       }
     } catch (error) {
