@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 import json
 import tempfile
 import unittest
@@ -36,8 +37,8 @@ class ActivityTests(unittest.TestCase):
             self.assertTrue(all(e['kind']=='work' for e in r.events))
             self.assertNotIn('SECRET',json.dumps(list(r.events)))
     def test_descendant_activity_reaches_catalog_and_snapshot(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             parent=msg('m','Parent');parent['timestamp']='2026-10-13T00:00:00Z'
             child=msg('c','Child');child['timestamp']='2026-10-14T00:00:00Z'
             f.add('main',events=[parent]);f.add('child','subagent',[child]);f.edge('main','child')

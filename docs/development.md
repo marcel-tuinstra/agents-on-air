@@ -58,7 +58,9 @@ CI runs the build, tests and packaging on macOS, Linux and Windows. Check [the c
 
 ## Release package
 
-Run `python3 package.py` after building. Upload the resulting `agents-on-air.zip` from the parent directory as a release asset on [GitHub Releases](https://github.com/marcel-tuinstra/agents-on-air/releases).
+Run `python3 package.py` after building to check the ZIP before publishing. CI also keeps the tested ZIP as an `agents-on-air` workflow artifact.
+
+To publish, merge the verified changes into `main`, then push a version tag such as `v0.1.0` on that commit. The **Release** workflow runs the shared checks on macOS, Linux and Windows. After all three pass, it publishes the tested `agents-on-air.zip` to [GitHub Releases](https://github.com/marcel-tuinstra/agents-on-air/releases). A failed check prevents publication. GitHub's workflow artifact is a build download; the ZIP attached to the release is the user download.
 
 The release includes the ready-to-run app, source, tests and documentation. Users extract it and start the launcher; they do not need to build the frontend. GitHub's generated **Source code** archives are separate from this release asset.
 

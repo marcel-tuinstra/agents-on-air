@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 import json
 import base64
 import tempfile
@@ -34,11 +35,11 @@ class ArtifactTests(unittest.TestCase):
         self.assertEqual(artifacts,[{'id':'new'},{'id':'middle'}])
         self.assertEqual(links,{'new-event':['new'],'middle-event':['middle']})
     def test_before_after_roles_require_explicit_alt_labels_in_one_event(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
             root=Path(tmp);cwd=root/'work';cwd.mkdir()
             for name in ('old.png','new.png','before-preview.png'):
                 (cwd/name).write_bytes(PNG)
-            store=root/'store';store.mkdir();f=StoreFixture(store);self.addCleanup(f.db.close)
+            store=root/'store';store.mkdir();f=StoreFixture(store);resources.callback(f.db.close)
             text='![Voor](old.png) ![After](new.png) ![Preview](before-preview.png)'
             f.add('main',events=[record('session_meta',{'cwd':str(cwd)},0),msg('m',text)])
             snap=CodexProvider(f.home).snapshot('main')
@@ -48,10 +49,10 @@ class ArtifactTests(unittest.TestCase):
             self.assertNotIn('role',images['Preview'])
             self.assertEqual(set(snap['events'][0]['artifactIds']),{a['id'] for a in images.values()})
     def test_referenced_image_resolves_and_escape_rejected(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
             root=Path(tmp);cwd=root/'work';cwd.mkdir();image=cwd/'diagram.png';image.write_bytes(PNG)
             secret=root/'secret.png';secret.write_bytes(PNG)
-            (root/'store').mkdir();f=StoreFixture(root/'store');self.addCleanup(f.db.close)
+            (root/'store').mkdir();f=StoreFixture(root/'store');resources.callback(f.db.close)
             e=msg('m','See ![diagram](diagram.png) and ![secret](../secret.png)')
             f.add('main',events=[record('session_meta',{'cwd':str(cwd)},0),e])
             reg=Registry([CodexProvider(f.home)]);snap=reg.snapshot('codex:main')
@@ -63,8 +64,8 @@ class ArtifactTests(unittest.TestCase):
             image.unlink()
             with self.assertRaises(ProviderError):reg.artifact(images[0]['id'])
     def test_file_change_diff_attaches_to_work_event(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             change=record('event_msg',{'type':'item_completed','item':{'type':'FileChange','id':'patch1','changes':{'/work/main.py':{'type':'update','unified_diff':'@@ -1 +1 @@\n-old\n+new\n'}}}})
             f.add('main',events=[change]);snap=CodexProvider(f.home).snapshot('main')
             diffs=[a for a in snap['artifacts'] if a['kind']=='diff']
@@ -72,8 +73,8 @@ class ArtifactTests(unittest.TestCase):
             self.assertIn('+new',diffs[0]['text'])
             self.assertIn(diffs[0]['id'],snap['events'][0]['artifactIds'])
     def test_completed_child_without_message_keeps_all_changed_files(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             f.add('main',events=[record('event_msg',{'type':'task_started','turn_id':'parent'})])
             f.add('child','subagent',[
                 record('turn_context',{'turn_id':'child-turn','root_turn_id':'parent'}),
@@ -88,8 +89,8 @@ class ArtifactTests(unittest.TestCase):
             change=next(e for e in snap['events'] if len(e['artifactIds'])==2)
             self.assertEqual(change['agentId'],'codex:child')
     def test_recent_child_diff_is_not_crowded_out_by_main_history(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             def change(identity, names):
                 return record('event_msg',{'type':'item_completed','item':{'type':'FileChange','id':identity,
                     'changes':{name:{'unified_diff':'@@ -1 +1 @@\n-old\n+new\n'} for name in names}}})
@@ -145,8 +146,8 @@ class ArtifactTests(unittest.TestCase):
             self.assertEqual(p.artifact_store.resolve(snap['artifacts'][0]['id'])[0],PNG)
             self.assertNotIn(base64.b64encode(PNG).decode(),json.dumps(snap))
     def test_codex_recorded_apply_patch_is_labeled(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             patch='*** Begin Patch\n*** Update File: main.py\n@@\n-old\n+new\n*** End Patch'
             e=record('response_item',{'type':'custom_tool_call','name':'apply_patch','call_id':'patch',
                                       'input':patch,'status':'completed'})
@@ -155,16 +156,16 @@ class ArtifactTests(unittest.TestCase):
             self.assertIn('apply_patch',snap['artifacts'][0]['provenance'])
             self.assertIn(snap['artifacts'][0]['id'],snap['events'][0]['artifactIds'])
     def test_sensitive_patch_path_is_withheld(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             change=record('event_msg',{'type':'item_completed','item':{'type':'FileChange','id':'secret-change',
                 'changes':{'/work/.env':{'unified_diff':'@@ -1 +1 @@\n-old\n+new\n'}}}})
             f.add('main',events=[change]);snap=CodexProvider(f.home).snapshot('main')
             self.assertEqual(snap['artifacts'],[])
             self.assertEqual(len(snap['events']),1)
     def test_sensitive_parent_folder_is_checked_before_shortening_filename(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             change=record('event_msg',{'type':'item_completed','item':{'type':'FileChange','id':'private-change',
                 'changes':{'/work/secrets/config.py':{'unified_diff':'@@ -1 +1 @@\n-old\n+synthetic\n'}}}})
             f.add('main',events=[change])
