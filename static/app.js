@@ -1083,9 +1083,12 @@
     updateCaption();
     renderWork();
   });
-  q("[data-caption-next]").addEventListener("click", () => {
+  q("[data-caption-next]").addEventListener("click", async () => {
     if (captionIndex < captionItems.length - 1) {
+      captionPaused = true;
+      readingHistory = true;
       captionIndex++;
+      if (speech.mode !== "off" && !speech.paused) await speech.pause();
       captionUntil =
         performance.now() + captionHold(captionItems[captionIndex].text);
       updateCaption();
