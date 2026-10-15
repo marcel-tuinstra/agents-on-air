@@ -7,21 +7,27 @@ ROOT = Path(__file__).resolve().parent
 TOP_LEVEL = (
     '.gitignore', 'build.py', 'theme_packs.py', 'package.py', 'server.py', 'live_feed.py', 'start_studio.py',
     'setup_studio.py', 'LICENSE', 'THIRD_PARTY.md', 'THEMES.md', 'narration.py', 'README.md', 'requirements.txt',
-    'Start Studio.command', 'Start Studio.sh', 'Start Studio.bat',
+    'Start Studio.command', 'Start Studio.sh', 'Start Studio.bat', '.gitattributes',
 )
-DIRECTORIES = ('.github', 'docs', 'themes', 'frontend', 'static', 'providers', 'tests', 'licenses')
+DIRECTORIES = ('.github', '.githooks', 'docs', 'themes', 'frontend', 'static',
+               'providers', 'tests', 'licenses', 'scripts')
 
 
-def package(target):
+def package(target, static_source=None):
+    target = Path(target)
+    static_source = Path(static_source) if static_source is not None else ROOT / 'static'
     files = [ROOT / name for name in TOP_LEVEL]
+    entries = [(path, Path('agents-on-air') / path.relative_to(ROOT)) for path in files]
     for name in DIRECTORIES:
-        files.extend(path for path in (ROOT / name).rglob('*')
-                     if path.is_file() and '__pycache__' not in path.parts
-                     and path.suffix != '.pyc' and not path.name.startswith('.'))
+        source = static_source if name == 'static' else ROOT / name
+        entries.extend((path, Path('agents-on-air') / name / path.relative_to(source))
+                       for path in source.rglob('*') if path.is_file()
+                       and '__pycache__' not in path.parts
+                       and path.suffix != '.pyc' and not path.name.startswith('.'))
     partial = target.with_suffix('.zip.tmp')
     with zipfile.ZipFile(partial, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
-        for path in sorted(files):
-            archive.write(path, Path('agents-on-air') / path.relative_to(ROOT))
+        for path, archive_name in sorted(entries, key=lambda entry: str(entry[1])):
+            archive.write(path, archive_name)
     with zipfile.ZipFile(partial) as archive:
         if archive.testzip() is not None:
             raise ValueError('Package verification failed.')

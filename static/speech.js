@@ -451,8 +451,10 @@
     }
     async pause() {
       if (!this.enabled || !this.context) return;
+      const generation = this.generation;
       this.paused = !this.paused;
       await (this.paused ? this.context.suspend() : this.context.resume());
+      if (generation !== this.generation) return;
       this.change();
       if (!this.paused) this.pump();
     }
@@ -473,27 +475,84 @@
       this.change();
       this.pump();
     }
-    offer(m, agents = [], manual = false, previousText) {
+    dropUnavailableAudio() {
+      if (this.paused || this.context?.state === "running" || !this._current?.playing)
+        return false;
+      this.cancelCurrent(false);
+      this.queue = [];
+      this.status = "Audio stopped · captions continue";
+      this.change();
+      return true;
+    }
+    async restartFrom(records, selected) {
+      this.cancelCurrent(false);
+      this.queue = [];
+      this.failed = false;
+      const generation = this.generation;
+      if (!this.enabled || !this.context) { this.change(); return false; }
+      this.paused = false;
+      try {
+        if (this.context.state !== "running") await this.context.resume();
+      } catch {
+        if (generation !== this.generation) return false;
+        this.status = "Click the studio to start sound";
+        this.change();
+        return false;
+      }
+      if (generation !== this.generation) return false;
+      let started = false;
+      for (const record of records) {
+        if (!started && record.id !== selected?.id) continue;
+        const offset = started ? 0 : selected.offset;
+        started = true;
+        const source = record.text.slice(offset),
+          leading = source.length - source.trimStart().length,
+          spoken = source.trim();
+        let cursor = 0;
+        for (const text of chunks(spoken)) {
+          if (this.queue.length >= 200) break;
+          const found = spoken.indexOf(text, cursor),
+            sourceStart = offset + leading + Math.max(cursor, found);
+          cursor = Math.max(cursor, found) + text.length;
+          this.queue.push({
+            text, captionText: text, captionRecordId: record.id,
+            sourceStart, messageId: record.meta.messageId,
+            agentId: record.meta.agentId,
+            profile: this.profile(record.meta.agentId),
+            speaker: record.meta.speaker, at: record.meta.at,
+            origin: record.meta.origin || "contribution", manual: true,
+            original: record.text,
+          });
+        }
+        if (this.queue.length >= 200) break;
+      }
+      this.status = this.idleStatus();
+      this.change();
+      this.pump();
+      return true;
+    }
+    offer(m, agents = [], manual = false, previousText, captionRecordId) {
       if (!this.enabled) return;
       const plainText = StudioText.plainText(m.text),
-        text = plainText.replace(/https?:\/\/\S+/g, "").trim();
-      if (!text) return;
-      let spoken = text;
+        text = plainText;
+      if (!text.trim()) return;
+      let rawSpoken = text;
       if (!manual) {
         const old =
           this.known.get(m.id) ??
           (previousText === undefined
             ? ""
-            : StudioText.plainText(previousText)
-                .replace(/https?:\/\/\S+/g, "")
-                .trim());
+            : StudioText.plainText(previousText));
         if (old === text) return;
         if (old) {
-          if (text.startsWith(old)) spoken = text.slice(old.length).trim();
+          if (text.startsWith(old)) rawSpoken = text.slice(old.length);
           else return;
         }
         this.known.set(m.id, text);
       }
+      const leading = rawSpoken.length - rawSpoken.trimStart().length,
+        spoken = rawSpoken.trim();
+      if (!spoken) return;
       if (this.needsGesture) this.queue = [];
       const pieces = chunks(spoken);
       if (this.queue.length + pieces.length > 200) {
@@ -503,7 +562,11 @@
         return;
       }
       const profile = this.profile(m.agentId, agents);
-      for (const text of pieces)
+      let sourceCursor = 0;
+      for (const text of pieces) {
+        const found = Math.max(sourceCursor, spoken.indexOf(text, sourceCursor)),
+          sourceStart = leading + found;
+        sourceCursor = found + text.length;
         this.queue.push({
           text,
           captionText: text,
@@ -511,8 +574,14 @@
           agentId: m.agentId,
           profile,
           speaker: m.speaker,
+          at: m.at,
+          origin: m.id?.startsWith("narration:") ? "narration" : "contribution",
+          manual,
+          captionRecordId,
+          sourceStart,
           original: m.text,
         });
+      }
       this.change();
       this.pump();
     }

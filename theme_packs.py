@@ -105,7 +105,7 @@ def build_themes(source, output):
         data={**manifest,'voiceSlots':[identity+'/'+v for v in audio['slots']]}
         for field in ('cast','scenery'):
             data[field]='/themes/'+identity+'/'+manifest[field]
-        for name in {manifest['cast'],manifest['scenery'],*(f['file'] for f in manifest.get('fonts',[]))}:
+        for name in sorted({manifest['cast'],manifest['scenery'],*(f['file'] for f in manifest.get('fonts',[]))}):
             shutil.copyfile(folder/name,target/name);assets.append('/themes/'+identity+'/'+name)
         for voice,profile in audio['voices'].items():
             voices[identity+'/'+voice]=profile

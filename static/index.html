@@ -327,6 +327,37 @@
     </div>
     <div class="room-state" data-room-state role="status"></div>
     <div class="stage" aria-label="Studio and shared work">
+      <section class="cast-set" aria-label="Lead agent studio">
+        <div class="cast-scene">
+        <div class="scenery"></div>
+        <div class="desk"></div>
+        <div class="studio-label" data-studio></div>
+        <span class="sleep-sign" aria-hidden="true">z z Z</span
+        ><canvas width="256" height="256" data-host aria-hidden="true"></canvas>
+        <div class="host-name">
+          <strong data-hostname></strong><span data-host-status></span>
+        </div>
+        <div class="cast-list" data-cast-list></div>
+        <div class="cast-empty" data-cast-empty hidden>
+          No supporting agents on stage.
+        </div>
+        </div>
+        <div class="dialogue-lane">
+          <div class="bubble-speaker" data-bubble-speaker hidden>
+            <canvas width="256" height="256" data-bubble-portrait aria-hidden="true"></canvas>
+            <strong data-bubble-name></strong>
+          </div>
+          <section class="speech-bubble" aria-label="Live caption" hidden>
+            <div class="caption-meta"><strong data-caption-speaker></strong><span data-caption-time></span></div>
+            <p data-caption-text aria-live="polite"></p>
+            <div class="caption-actions">
+              <button type="button" data-caption-back aria-label="Previous caption" title="Previous caption"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button>
+              <button type="button" data-caption-pause aria-label="Pause captions" title="Pause captions" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path class="pause-icon" d="M8 5v14M16 5v14"/><path class="play-icon" d="m8 5 11 7-11 7Z"/></svg></button>
+              <button type="button" data-caption-next aria-label="Next caption" title="Next caption"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button>
+            </div>
+          </section>
+        </div>
+      </section>
       <section class="work-screen" aria-label="Shared work">
         <div class="work-screen-head">
           <span>Work screen</span
@@ -407,36 +438,7 @@
           </button>
         </div>
       </section>
-      <section class="cast-set" aria-label="Lead agent studio">
-        <div class="scenery"></div>
-        <div class="desk"></div>
-        <div class="studio-label" data-studio></div>
-        <span class="sleep-sign" aria-hidden="true">z z Z</span
-        ><canvas width="256" height="256" data-host aria-hidden="true"></canvas>
-        <div class="host-name">
-          <strong data-hostname></strong><span data-host-status></span>
-        </div>
-        <div class="cast-list" data-cast-list></div>
-        <div class="cast-empty" data-cast-empty hidden>
-          No supporting agents on stage.
-        </div>
-      </section>
     </div>
-    <section class="caption-bar" aria-label="Live caption">
-      <div class="caption-meta">
-        <strong data-caption-speaker></strong><span data-caption-time></span>
-      </div>
-      <p data-caption-text aria-live="polite"></p>
-      <div class="caption-actions">
-        <button type="button" data-caption-back aria-label="Previous caption">
-          Previous</button
-        ><button type="button" data-caption-pause aria-pressed="false">
-          Pause captions</button
-        ><button type="button" data-caption-next aria-label="Next caption">
-          Next
-        </button>
-      </div>
-    </section>
     <div class="room-foot">
       <button type="button" data-summarize hidden>Create studio update</button
       ><span data-summary-status role="status"></span>
@@ -581,4 +583,4 @@
   </section>
 </dialog>
 
-</div><script src="/marked.js" defer></script><script src="/purify.js" defer></script><script src="/markdown.js" defer></script><script src="/stage-model.js" defer></script><script src="/themes.js" defer></script><script src="/voice-profiles.js" defer></script><script src="/speech.js" defer></script><script src="/body.js" defer></script><script src="/rig.js" defer></script><script src="/controllers.js" defer></script><script src="/stream.js" defer></script><script src="/work-view.js" defer></script><script src="/app.js" defer></script><script src="/settings.js" defer></script></body></html>
+</div><script src="/marked.js" defer></script><script src="/purify.js" defer></script><script src="/markdown.js" defer></script><script src="/stage-model.js" defer></script><script src="/themes.js" defer></script><script src="/voice-profiles.js" defer></script><script src="/speech.js" defer></script><script src="/body.js" defer></script><script src="/rig.js" defer></script><script src="/controllers.js" defer></script><script src="/stream.js" defer></script><script src="/work-view.js" defer></script><script src="/captions.js" defer></script><script src="/app.js" defer></script><script src="/settings.js" defer></script></body></html>

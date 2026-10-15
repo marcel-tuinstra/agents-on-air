@@ -22,16 +22,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: python build.py
-      - run: python -m unittest discover -s tests -v
-      - name: Frontend tests
+      - name: Shared offline verification
         shell: bash
-        run: |
-          for test in tests/*.cjs; do node "$test" || exit 1; done
-      - run: python package.py
-      - name: Stage the release ZIP
-        if: matrix.os == 'ubuntu-latest'
-        run: cp ../agents-on-air.zip "$RUNNER_TEMP/agents-on-air.zip"
+        run: python scripts/verify.py --package-out "$RUNNER_TEMP/agents-on-air.zip"
       - name: Keep the release ZIP
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4

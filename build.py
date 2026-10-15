@@ -9,18 +9,19 @@ OUTPUT = ROOT / 'static'
 SCRIPTS = (
     'marked.js', 'purify.js', 'markdown.js', 'stage-model.js',
     'themes.js', 'voice-profiles.js', 'speech.js', 'body.js', 'rig.js',
-    'controllers.js', 'stream.js', 'work-view.js', 'app.js', 'settings.js',
+    'controllers.js', 'stream.js', 'work-view.js', 'captions.js', 'app.js', 'settings.js',
 )
 
 
-def build():
+def build(output=OUTPUT):
+    output = Path(output)
     load_packs(ROOT / "themes")  # Reject malformed packs before touching generated output.
-    OUTPUT.mkdir(exist_ok=True)
-    shutil.copytree(SOURCE / 'public', OUTPUT, dirs_exist_ok=True)
-    for source in SOURCE.iterdir():
+    output.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(SOURCE / 'public', output, dirs_exist_ok=True)
+    for source in sorted(SOURCE.iterdir()):
         if source.suffix in ('.js', '.css'):
-            shutil.copyfile(source, OUTPUT / source.name)
-    catalog, controls = build_themes(ROOT / 'themes', OUTPUT)
+            shutil.copyfile(source, output / source.name)
+    catalog, controls = build_themes(ROOT / 'themes', output)
     room = (SOURCE / 'room.html').read_text(encoding='utf-8')
     room = room.replace('<header class="appbar"></header>',
                         '<header class="appbar">' + (SOURCE / 'toolbar.html').read_text(encoding='utf-8') + '</header>')
@@ -32,7 +33,7 @@ def build():
             '<title>Agents on Air · Live</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/themes.css">'
             '</head><body><div id="studio-hub" data-theme="midnight">'
             + room + '</div>' + scripts + '</body></html>')
-    (OUTPUT / 'index.html').write_text(page, encoding='utf-8')
+    (output / 'index.html').write_text(page, encoding='utf-8')
 
 
 if __name__ == '__main__':

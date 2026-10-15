@@ -18,9 +18,27 @@ install, network access or files from the original design workspace. Run
 `python3 package.py` to create a source-and-runtime zip in the parent directory.
 On Windows, use `py -3` in place of `python3`.
 
+Install the repository-local Git checks with `python3 scripts/install_hooks.py`
+(`py -3 scripts/install_hooks.py` on Windows). The installer leaves existing
+custom Git hook paths or active default hooks alone; it is safe to run again
+after installation. The pre-commit hook checks staged Python, JavaScript and
+JSON syntax plus whitespace in the staged diff. It reads Git's index, so
+partially staged files are checked as they will be committed. The pre-push
+hook requires a clean checkout at the pushed `HEAD` and runs the same offline
+verification as CI. Pushing an older commit requires checking out and
+verifying that commit first. Both hooks need Python 3.9+; JavaScript checks
+also need Node.js. Missing tools fail the hook rather than skipping checks.
+
+Run the full shared check yourself with `python3 scripts/verify.py`. It builds
+into a temporary directory, compares generated files with `static/`, runs the
+Python and Node tests, and checks a temporary ZIP. It does not write generated
+files or an archive into the repository. After changing build inputs, run
+`python3 build.py` and stage the changed `static/` files before verifying.
+
 Frontend responsibilities:
 
-- `app.js` coordinates the selected chat, cast and captions.
+- `app.js` coordinates the selected chat, cast and caption view.
+- `captions.js` owns speaker attribution, measured text segments, reading position and pause/history state.
 - `stream.js` owns the source connection, reconnection and cancellation.
 - `work-view.js` owns shared-file rendering and navigation.
 - `controllers.js` owns loading and stale-request protection.
@@ -50,11 +68,12 @@ node tests/test_paper.cjs
 node tests/test_pocket.cjs
 node tests/test_midnight.cjs
 node tests/test_body.cjs
+node tests/test_captions.cjs
 ```
 
 Fixtures use fictional databases and transcripts. HTTP/SSE tests bind temporary loopback ports. The screenshots in `docs/media/` show the real interface with fictional chats; they contain no personal chat data.
 
-CI runs the build, tests and packaging on macOS, Linux and Windows. Check [the current results](https://github.com/marcel-tuinstra/agents-on-air/actions/workflows/checks.yml) before making platform-support claims. Browser audio and visual checks still need a human check on the target platform.
+CI runs the shared verification command on macOS, Linux and Windows. Check [the current results](https://github.com/marcel-tuinstra/agents-on-air/actions/workflows/checks.yml) before making platform-support claims. Browser audio and visual checks still need a human check on the target platform.
 
 ## Release package
 
