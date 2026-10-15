@@ -31,7 +31,7 @@ also need Node.js. Missing tools fail the hook rather than skipping checks.
 
 Run the full shared check yourself with `python3 scripts/verify.py`. It builds
 into a temporary directory, compares generated files with `static/`, runs the
-Python and Node tests, and checks a temporary ZIP. It does not write generated
+Python and Node tests, and starts the extracted ZIP from an unrelated directory with empty chat stores. It checks the launcher, HTTP startup, disabled-by-default studio updates and the bundled web assets. It does not write generated
 files or an archive into the repository. After changing build inputs, run
 `python3 build.py` and stage the changed `static/` files before verifying.
 

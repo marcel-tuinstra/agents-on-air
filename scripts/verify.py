@@ -4,6 +4,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from check_package import check_package
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -52,6 +53,7 @@ def verify(package_out=None):
         target = Path(package_out) if package_out else Path(temporary) / 'agents-on-air.zip'
         target.parent.mkdir(parents=True, exist_ok=True)
         package(target, static_source=generated)
+        check_package(target)
         print(f'Verified ZIP: {target}', flush=True)
 
 

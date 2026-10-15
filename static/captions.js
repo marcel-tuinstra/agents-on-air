@@ -42,6 +42,7 @@
       this.history = false;
       this.due = 0;
       this.expired = false;
+      this.trimmed = 0;
     }
     get current() { return this.items[this.index] || null; }
     get visible() { return !!this.current && (!this.expired || this.paused || this.history); }
@@ -49,15 +50,25 @@
     append(text, meta, now, { initial = false } = {}) {
       text = String(text || "");
       if (!text.trim()) return false;
-      const oldLength = this.items.length,
-        oldCurrent = this.current,
+      const oldCurrent = this.current,
         oldDue = this.due,
         wasExpired = this.expired;
       const id = Symbol("caption");
-      this.records.push({ id, text, meta });
-      this.reflow(now, { preserve: !initial });
+      const record = { id, text, meta };
+      this.records.push(record);
+      this.items.push(...this.segmentRecord(record));
+      if (this.records.length > 200) {
+        // Keep the passage being read, even when a burst fills the waiting queue.
+        const pinned = !initial && (!wasExpired || this.paused || this.history) ? oldCurrent?.id : null;
+        const remove = this.records.findIndex((entry) => entry.id !== pinned);
+        const [removed] = this.records.splice(remove, 1);
+        this.items = this.items.filter((item) => item.id !== removed.id);
+        this.trimmed++;
+        this.index = oldCurrent ? this.items.findIndex((item) =>
+          item.id === oldCurrent.id && item.offset === oldCurrent.offset) : -1;
+      }
       if (initial) this.index = this.items.length - 1;
-      else if (wasExpired && !this.paused && !this.history) this.index = oldLength;
+      else if (wasExpired && !this.paused && !this.history) this.index = this.items.findIndex((item) => item.id === id);
       else if (!this.paused && !this.history && this.index < 0) this.index = 0;
       this.expired = false;
       this.due = oldCurrent && !wasExpired && !initial && this.current?.id === oldCurrent.id && this.current?.offset === oldCurrent.offset
@@ -65,16 +76,17 @@
         : now + (this.index === this.items.length - 1 ? 4000 : this.hold(this.current?.text || text));
       return id;
     }
+    segmentRecord(record) {
+      let offset = 0;
+      return this.segment(record.text).map((text) => {
+        const item = { ...record.meta, text, id: record.id, offset };
+        offset += text.length;
+        return item;
+      });
+    }
     reflow(now, { preserve = true } = {}) {
       const selected = preserve ? this.current : null;
-      this.items = this.records.flatMap((record) => {
-        let offset = 0;
-        return this.segment(record.text).map((text) => {
-          const item = { ...record.meta, text, id: record.id, offset };
-          offset += text.length;
-          return item;
-        });
-      });
+      this.items = this.records.flatMap((record) => this.segmentRecord(record));
       if (selected) {
         const found = this.items.findIndex((item) => item.id === selected.id && item.offset <= selected.offset && item.offset + item.text.length > selected.offset);
         this.index = found >= 0 ? found : Math.min(this.index, this.items.length - 1);

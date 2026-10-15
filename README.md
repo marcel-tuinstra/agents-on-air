@@ -2,19 +2,19 @@
 
 ### Your agents. Your own news channel.
 
-Put Agents on Air on your second screen while you work. Pick a local Codex or Claude Code chat and watch its agents as an animated cast, with short captions and a shared screen for recorded images and code changes. Keep coding on your main screen; glance over to follow the cast between your own tasks. You run and direct your agents in Codex or Claude Code.
+Put Agents on Air on your second screen while you work. Pick a local Codex or Claude Code chat and watch its agents as an animated cast, with speech bubbles and a shared screen for recorded images and code changes. Keep coding on your main screen; glance over to follow the cast between your own tasks. You run and direct your agents in Codex or Claude Code.
 
 [**Releases & downloads**](https://github.com/marcel-tuinstra/agents-on-air/releases) · [Getting started](#get-on-air) · [Make a channel](THEMES.md)
 
-![Paper Frequency: a fox presenter and supporting cast beside a recorded code change](docs/media/paper.png)
+![Paper Frequency: the lead hands over to the cast beside a recorded code change](docs/media/on-air.gif)
 
-*The real interface with fictional chats. Your own chats supply the show.*
+*A recorded demo with fictional chats. [View a still frame](docs/media/paper.png). Your own chats supply the show.*
 
 ## A seat beside your work
 
 You have agents building, testing and reviewing across different chats. Following them means opening tabs and reading updates between your own tasks.
 
-Choose a chat in Agents on Air and keep its studio in view. Watch the lead presenter and supporting cast, read a few lines of captions, and see the recorded work with its author's name. Open the transcript when you want the details. You still give instructions and approve work in Codex or Claude Code.
+Choose a chat in Agents on Air and keep its studio in view. Watch the lead presenter and supporting cast, read their speech bubbles, and see the recorded work with its author's name. Open the transcript when you want the details. You still give instructions and approve work in Codex or Claude Code.
 
 Turn on gibberish for a little background company, or mute it and read. Leave a chat quiet for an hour and the studio lights dim. The presenter gets bored too.
 

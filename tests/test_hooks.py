@@ -180,13 +180,15 @@ class VerificationPaths(unittest.TestCase):
         with patch.object(verify, 'build') as build, \
              patch.object(verify, 'compare_generated') as compare, \
              patch.object(verify, 'command'), \
-             patch.object(verify, 'package') as package:
+             patch.object(verify, 'package') as package, \
+             patch.object(verify, 'check_package') as install:
             verify.verify()
         generated = build.call_args.args[0]
         self.assertNotEqual(generated, verify.ROOT / 'static')
         self.assertEqual(compare.call_args.args[0], generated)
         self.assertEqual(package.call_args.kwargs['static_source'], generated)
         self.assertNotEqual(package.call_args.args[0].parent, verify.ROOT)
+        install.assert_called_once_with(package.call_args.args[0])
 
     def test_real_build_and_zip_leave_static_files_untouched(self):
         static = verify.ROOT / 'static'

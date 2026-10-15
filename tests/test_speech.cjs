@@ -21,5 +21,20 @@ function player(){const s=new StudioSpeech(()=>{},id=>({channel:'midnight',slot:
  const offsets=player(),offsetId=Symbol('offset');offsets.offer(message('alpha.','offset'));offsets.offer(message('alpha.  beta https://example.com next','offset'),[],false,'alpha.',offsetId);assert.equal(offsets.queue[1].text,'beta https://example.com next');assert.equal(offsets.queue[1].sourceStart,2);assert.equal(offsets.queue[1].captionRecordId,offsetId);
  const unavailable=player();unavailable.context={state:'suspended'};unavailable.paused=false;unavailable.current={playing:true,text:'old'};unavailable.queue=[{text:'later'}];assert.equal(unavailable.dropUnavailableAudio(),true);assert.equal(unavailable.current,null);assert.equal(unavailable.queue.length,0);assert.equal(unavailable.failed,false);
  let finishResume;const stale=player();stale.context={state:'suspended',resume:()=>new Promise(resolve=>{finishResume=resolve})};const pending=stale.restartFrom([{id:record,text:'old',meta:{messageId:'old',agentId:'agent1',speaker:'Old'}}],{id:record,offset:0});stale.context.state='running';stale.reset();finishResume();assert.equal(await pending,false);assert.equal(stale.queue.length,0);
+ const retained = player();
+ const held = Symbol('held');
+ retained.queue = [{text:'held',captionRecordId:held}];
+ for (let i=0; i<1000; i++) {
+   const latest = Symbol('latest');
+   retained.retainCaptions([{id:held},{id:latest}]);
+   retained.offer(message('Update '+i,'burst-'+i),[],false,undefined,latest);
+ }
+ assert.equal(retained.known.size,200);
+ assert.equal(retained.known.has('burst-0'),false);
+ assert.equal(retained.known.has('burst-999'),true);
+ assert.deepEqual(retained.queue.map(item=>item.text),['held','Update 999']);
+ retained.reset();
+ assert.equal(retained.known.size,0);
+ assert.equal(retained.queue.length,0);
  console.log('Speech queue, long chunks, fixed cast, audio-clock visemes, updates, reset, silence/pause and retry: passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
