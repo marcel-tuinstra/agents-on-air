@@ -51,6 +51,12 @@ Settings and keys live in server memory for the current server session. A blank 
 
 Environment configuration is also supported: `STUDIO_NARRATION_MODE=off|cli|byok`, `STUDIO_NARRATION_PROVIDER=codex|claude|openai|anthropic`, `STUDIO_NARRATION_MODEL`, `STUDIO_NARRATION_STYLE`. BYOK uses `STUDIO_NARRATION_API_KEY`; CLI requires `STUDIO_NARRATION_CLI_APPROVED=1`. Never commit keys. Unrelated general API keys are not discovered or reused.
 
+### Integration verification
+
+On 15 October 2026, a live test through the narration adapter succeeded with Codex CLI 0.162.1 and a fictional agent contribution. Claude Code 2.1.287 was installed but signed out, so a live Claude result remains unverified. Install detection in Settings does not verify account sign-in.
+
+On the same date, OpenAI BYOK succeeded with `gpt-4.1-mini` through the authenticated Settings and studio-update HTTP routes, using a fictional contribution and a user-authorized key held in memory for the test. The response retained its source message ID; disabling custom updates cleared the key. Anthropic request/response handling has mock coverage, but a live Anthropic API call remains unverified. A successful test does not validate another account, key or model entered in Settings.
+
 ## Data and privacy
 
 Codex uses read-only SQLite/JSONL; Claude uses local project and subagent JSONL. Provider-scoped identities, `lastActivityAt`, normalized events and artifact references carry agent/time/provenance. Polling every two seconds feeds SSE. This is saved-log viewing, not token streaming or proof that a process is alive.

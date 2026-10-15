@@ -1,5 +1,10 @@
 name: Checks
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -24,3 +29,13 @@ jobs:
         run: |
           for test in tests/*.cjs; do node "$test" || exit 1; done
       - run: python package.py
+      - name: Stage the release ZIP
+        if: matrix.os == 'ubuntu-latest'
+        run: cp ../agents-on-air.zip "$RUNNER_TEMP/agents-on-air.zip"
+      - name: Keep the release ZIP
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agents-on-air
+          path: ${{ runner.temp }}/agents-on-air.zip
+          if-no-files-found: error

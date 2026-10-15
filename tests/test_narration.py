@@ -87,6 +87,44 @@ class NarrationTests(unittest.TestCase):
             opener.open.side_effect=RuntimeError('test-only secret response')
             with self.assertRaises(NarrationError) as error:service.summarize(SNAP)
             self.assertNotIn('test-only',str(error.exception))
+    def test_anthropic_request_and_response_contract(self):
+        service=NarrationService({'STUDIO_NARRATION_MODE':'byok','STUDIO_NARRATION_PROVIDER':'anthropic',
+                                  'STUDIO_NARRATION_MODEL':'chosen-model','STUDIO_NARRATION_API_KEY':'test-only'})
+        response=Mock()
+        response.read.return_value=json.dumps({'content':[{'type':'text','text':'An attributed update.'}]}).encode()
+        cm=Mock();cm.__enter__=Mock(return_value=response);cm.__exit__=Mock(return_value=False)
+        opener=Mock();opener.open.return_value=cm
+        with patch('urllib.request.build_opener',return_value=opener):
+            result=service.summarize(SNAP)
+        self.assertEqual(result['text'],'An attributed update.')
+        self.assertEqual(result['sourceMessageIds'],['one'])
+        request=opener.open.call_args.args[0]
+        headers={name.lower():value for name,value in request.header_items()}
+        self.assertEqual(request.full_url,'https://api.anthropic.com/v1/messages')
+        self.assertEqual(headers['x-api-key'],'test-only')
+        self.assertNotIn('authorization',headers)
+        body=json.loads(request.data)
+        self.assertEqual(body['model'],'chosen-model')
+        self.assertEqual(body['max_tokens'],600)
+        self.assertEqual(json.loads(body['messages'][0]['content']),
+                         [{'speaker':'Test agent','text':'De knop is aangepast.'}])
+
+    def test_codex_cli_consumes_completed_messages_and_rejects_failed_exit(self):
+        service=NarrationService({'STUDIO_NARRATION_MODE':'cli','STUDIO_NARRATION_PROVIDER':'codex',
+                                  'STUDIO_NARRATION_CLI_APPROVED':'1'})
+        stdout='\n'.join(json.dumps(event) for event in [
+            {'type':'thread.started'}, {'type':'turn.started'},
+            {'type':'item.completed','item':{'type':'agent_message','text':'A short update.'}},
+            {'type':'turn.completed','usage':{}}])
+        with patch('shutil.which',return_value='/fake/codex'):
+            with patch('subprocess.run',return_value=Mock(returncode=0,stdout=stdout)) as run:
+                self.assertEqual(service.summarize(SNAP)['text'],'A short update.')
+                command=run.call_args.args[0]
+                for flag in ('--ephemeral','--ignore-user-config','--json'):
+                    self.assertIn(flag,command)
+            with patch('subprocess.run',return_value=Mock(returncode=1,stdout=stdout)):
+                with self.assertRaises(NarrationError):service.summarize(SNAP)
+
     def test_no_empty_or_concurrent_calls(self):
         service=NarrationService({'STUDIO_NARRATION_MODE':'byok','STUDIO_NARRATION_PROVIDER':'anthropic','STUDIO_NARRATION_MODEL':'chosen','STUDIO_NARRATION_API_KEY':'test'})
         with self.assertRaises(NarrationError):service.summarize({'messages':[]})

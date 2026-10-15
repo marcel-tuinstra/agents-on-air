@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 import json
 import os
 import sqlite3
@@ -75,15 +76,15 @@ class ClaudeTests(unittest.TestCase):
 
 class GroupingTests(unittest.TestCase):
     def test_malformed_grouping_keeps_chats_available(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close);f.add('main');p=CodexProvider(f.home)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close);f.add('main');p=CodexProvider(f.home)
             for data in [[], {'electron-persisted-atom-state':None}, {'local-projects':['bad']}]:
                 (f.home/'.codex-global-state.json').write_text(json.dumps(data))
                 self.assertEqual(p.list_chats()[0]['groupLabel'],'Recent')
 
     def test_saved_membership_order_custom_sections_and_refresh(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            f=StoreFixture(tmp);self.addCleanup(f.db.close)
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as resources:
+            f=StoreFixture(tmp);resources.callback(f.db.close)
             for id in ['a','b','c']:f.add(id)
             state={'local-projects':{'p':{'name':'My project','rootPaths':['/projects/demo']},'empty':{'name':'Empty'}},'project-order':['empty','p'], 'thread-project-assignments':{'a':{'projectId':'p'}},'electron-persisted-atom-state':{'sidebar-project-expanded-v1-codex:p':False,'sidebar-custom-sections-v3':{'account':{'sections':[{'id':'s','name':'Games','itemKeys':['codex:thread:local:b']} ]}}}}
             path=f.home/'.codex-global-state.json';path.write_text(json.dumps(state));p=CodexProvider(f.home);chats={c['id']:c for c in p.list_chats()}
