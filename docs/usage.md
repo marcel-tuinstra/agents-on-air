@@ -55,7 +55,7 @@ Environment configuration is also supported: `STUDIO_NARRATION_MODE=off|cli|byok
 
 On 15 October 2026, a live test through the narration adapter succeeded with Codex CLI 0.162.1 and a fictional agent contribution. Claude Code 2.1.287 was installed but signed out, so a live Claude result remains unverified. Install detection in Settings does not verify account sign-in.
 
-BYOK request/response handling and credential isolation have automated mock tests. Live OpenAI and Anthropic API calls remain unverified; the test environment has no configured API key. These checks do not claim that a key or model entered in Settings will work without a provider request.
+On the same date, OpenAI BYOK succeeded with `gpt-4.1-mini` through the authenticated Settings and studio-update HTTP routes, using a fictional contribution and a user-authorized key held in memory for the test. The response retained its source message ID; disabling custom updates cleared the key. Anthropic request/response handling has mock coverage, but a live Anthropic API call remains unverified. A successful test does not validate another account, key or model entered in Settings.
 
 ## Data and privacy
 
