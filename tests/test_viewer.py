@@ -5,6 +5,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
@@ -98,6 +99,16 @@ class AdapterTests(unittest.TestCase):
             def list_chats(self):return [{'id':'claude:main','provider':'claude','updatedAt':'2026-10-14T09:00:00Z'}]
             def snapshot(self,key):return {'provider':'claude','nativeId':key}
         self.f.add('main');r=Registry([self.p,Fake()]);self.assertEqual({c['id'] for c in r.catalog()['chats']},{'claude:main','codex:main'});self.assertEqual(r.snapshot('claude:main')['provider'],'claude')
+
+class StartupTests(unittest.TestCase):
+    def test_loopback_startup_does_not_wait_for_reverse_dns(self):
+        with patch('socket.getfqdn', side_effect=RuntimeError('Resolver unavailable')) as lookup:
+            server = StudioServer(('127.0.0.1', 0), Registry([]))
+            self.addCleanup(server.server_close)
+            self.assertGreater(server.server_port, 0)
+            self.assertEqual(server.server_name, 'localhost')
+            lookup.assert_not_called()
+
 
 class HttpTests(unittest.TestCase):
     def setUp(self):

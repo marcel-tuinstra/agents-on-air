@@ -9,6 +9,7 @@ import time
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from socketserver import TCPServer
 from urllib.parse import parse_qs, urlsplit
 from providers.base import Registry, ProviderError
 from providers.codex import CodexProvider
@@ -26,6 +27,12 @@ class StudioServer(ThreadingHTTPServer):
         self.token = secrets.token_urlsafe(32)
         self.feed = LiveFeed()
         super().__init__(address, Handler)
+
+    def server_bind(self):
+        # This loopback viewer does not need HTTPServer's reverse DNS lookup.
+        TCPServer.server_bind(self)
+        self.server_name = 'localhost'
+        self.server_port = self.server_address[1]
 
     def catalog(self):
         return self.feed.read('catalog', self.registry.catalog)
