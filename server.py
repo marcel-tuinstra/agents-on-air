@@ -107,6 +107,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200, (STATIC/'voice-lab/index.html').read_bytes(), 'text/html; charset=utf-8', True)
         if route.path == '/':
             return self.respond(200, (STATIC/'index.html').read_bytes(), 'text/html; charset=utf-8', True)
+        icons = {'/favicon.svg': 'image/svg+xml', '/favicon-32.png': 'image/png', '/apple-touch-icon.png': 'image/png'}
+        if route.path in icons:  # Public brand assets; browsers may fetch icons without the session cookie.
+            return self.respond(200, (STATIC/route.path.lstrip('/')).read_bytes(), icons[route.path])
         if not self.authorized():
             return self.respond(401, {'error': 'Reopen the studio to connect.'})
         if route.path == '/api/narration/config':

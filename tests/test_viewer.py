@@ -189,6 +189,13 @@ class HttpTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as e:self.get('/voice-lab',{'Origin':'https://evil.test'})
         self.assertEqual(e.exception.code,403)
 
+    def test_brand_icons_are_linked_and_served_without_a_session(self):
+        page=self.get('/').read().decode()
+        for path,kind in (('/favicon.svg','image/svg+xml'),('/favicon-32.png','image/png'),('/apple-touch-icon.png','image/png')):
+            self.assertIn('href="'+path+'"',page)
+            with self.get(path) as response:
+                self.assertEqual(response.headers['Content-Type'],kind);self.assertTrue(response.read())
+        with self.assertRaises(urllib.error.HTTPError):self.get('/favicon.svg',{'Host':'evil.test'})
     def test_theme_assets_require_session_and_allowlisted_paths(self):
         with self.assertRaises(urllib.error.HTTPError) as error:self.get('/themes/paper/cast.webp')
         self.assertEqual(error.exception.code,401)

@@ -12,7 +12,7 @@ TOP_LEVEL = (
 WEB = ('*.js', '*.css', '*.html', '*.json', '*.svg', '*.ttf', '*.woff2', '*.webp', '*.png')
 # Only known file types are shipped, so stray local files in these folders stay out.
 DIRECTORIES = {
-    'docs': ('*.md', '*.png', '*.gif'),
+    'docs': ('*.md', '*.png', '*.gif', '*.svg'),
     'themes': ('*.json', '*.webp', '*.png', '*.ttf', '*.woff2', 'LICENSE'),
     'frontend': WEB,
     'static': WEB,
