@@ -38,18 +38,18 @@ def validate_audio(data):
         for field,(low,high) in bounds.items():
             if not number(voice.get(field),low,high):raise ValueError('Invalid audio parameter: '+field)
         templates=voice.get('templates',[])
-        if not 1 <= len(templates) <= 32:raise ValueError('Voice needs 1–32 sound templates.')
+        if not isinstance(templates,list) or not 1 <= len(templates) <= 32:raise ValueError('Voice needs 1–32 sound templates.')
         for template in templates:
             if not isinstance(template,dict):raise ValueError('Template must be an object.')
             if not number(template.get('pitch'),60,1200) or template.get('mouth') not in set('ABCDEFGHX'):
                 raise ValueError('Invalid pitch or mouth shape.')
             if 'partials' in template:
                 parts=template['partials']
-                if not 1 <= len(parts) <= 64 or any(len(pair)!=2 or not number(pair[0],.1,64) or not number(pair[1],0,1) for pair in parts):
+                if not isinstance(parts,list) or not 1 <= len(parts) <= 64 or any(not isinstance(pair,list) or len(pair)!=2 or not number(pair[0],.1,64) or not number(pair[1],0,1) for pair in parts):
                     raise ValueError('Invalid partial weights.')
             else:
                 harmonics=template.get('harmonics',[])
-                if not 1 <= len(harmonics) <= 64 or not all(number(v,0,1) for v in harmonics):
+                if not isinstance(harmonics,list) or not 1 <= len(harmonics) <= 64 or not all(number(v,0,1) for v in harmonics):
                     raise ValueError('Invalid harmonic weights.')
         for field in ('sentencePause','commaPause'):
             if field in voice and not number(voice[field],0,2):raise ValueError('Invalid pause.')
@@ -72,15 +72,17 @@ def load_packs(source):
             if not isinstance(manifest.get(field),str) or not 1 <= len(manifest[field]) <= 240:raise ValueError('Missing theme '+field)
         for field in ('cast','scenery'):
             name=manifest.get(field,'')
-            if not FILE.fullmatch(name) or Path(name).suffix not in ('.png','.webp'):raise ValueError('Use PNG or WebP theme images.')
+            if not isinstance(name,str) or not FILE.fullmatch(name) or Path(name).suffix not in ('.png','.webp'):raise ValueError('Use PNG or WebP theme images.')
             local_file(folder,name)
         if not number(manifest.get('sceneryPosition'),0,100):raise ValueError('Invalid scenery position.')
-        crop=manifest.get('portrait',[])
-        if len(crop)!=4 or not all(number(v,0,256) for v in crop) or min(crop[2:])<=0:raise ValueError('Invalid portrait crop.')
-        for key,value in manifest.get('tokens',{}).items():
+        crop=manifest.get('portrait')
+        if not isinstance(crop,list) or len(crop)!=4 or not all(number(v,0,256) for v in crop) or min(crop[2:])<=0:raise ValueError('Invalid portrait crop.')
+        if not isinstance(manifest.get('tokens'),dict):raise ValueError('Theme tokens must be a JSON object.')
+        for key,value in manifest['tokens'].items():
             if not key.startswith('--') or key[2:] not in TOKENS or not isinstance(value,str) or not re.fullmatch(r'[\w\s#.,%"\'-]+',value):
                 raise ValueError('Invalid theme CSS token.')
         fonts=manifest.get('fonts',[])
+        if not isinstance(fonts,list):raise ValueError('Theme fonts must be a list.')
         if len(fonts)>2:raise ValueError('At most two local fonts are supported.')
         for font in fonts:
             if not isinstance(font,dict):raise ValueError('Font must be an object.')

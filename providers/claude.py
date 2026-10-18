@@ -7,7 +7,7 @@ from pathlib import Path
 from .base import Provider, ProviderError
 from .schema import Snapshot, finalize_snapshot
 from .presentation import clean_user_text
-from .codex import Rollout, timestamp, text_content, MESSAGE_LIMIT
+from .codex import Rollout, timestamp, text_content, clip, MESSAGE_LIMIT
 from .artifacts import ArtifactStore, RecentArtifacts, image_references, diff_artifact, sensitive_diff_path
 
 
@@ -38,19 +38,26 @@ class ClaudeRollout(Rollout):
                         r = json.loads(line)
                         if isinstance(r, dict):
                             self.metadata(r)
-                    except (ValueError, TypeError):
+                    except (ValueError, TypeError, AttributeError, KeyError):
                         continue
         except OSError:
             pass
 
     def metadata(self, r):
-        self.cwd = r.get('cwd') or self.cwd
-        self.session_id = r.get('sessionId') or self.session_id
-        self.sidechain = r.get('isSidechain', self.sidechain)
+        if isinstance(r.get('cwd'), str) and r['cwd']:
+            self.cwd = r['cwd']
+        if isinstance(r.get('sessionId'), str) and r['sessionId']:
+            self.session_id = r['sessionId']
+        if isinstance(r.get('isSidechain'), bool):
+            self.sidechain = r['isSidechain']
         if r.get('type') == 'custom-title' and isinstance(r.get('customTitle'), str):
             self.custom_title = r['customTitle'][:180]
         if r.get('type') == 'user' and isinstance(r.get('message'), dict) and not self.title:
             self.title = ' '.join(visible_user(r).split())[:140]
+
+    def forget(self, message):
+        super().forget(message)
+        self.inline_refs.pop(message['nativeId'], None)
 
     def consume(self, r):
         if not isinstance(r, dict):
@@ -78,7 +85,7 @@ class ClaudeRollout(Rollout):
                   for b in blocks if isinstance(b, dict) and b.get('type') == 'image'
                   and isinstance(b.get('source'), dict) and b['source'].get('type') == 'base64']
         if kind == 'assistant':
-            self.model = m.get('model') or self.model
+            self.model = m['model'] if isinstance(m.get('model'), str) and m['model'] else self.model
             text = text_content(m.get('content'))
             for block in m.get('content', []) if isinstance(m.get('content'), list) else []:
                 if isinstance(block, dict) and block.get('type') == 'tool_use':
@@ -116,6 +123,7 @@ class ClaudeRollout(Rollout):
             text = '[Image]'
         if not text.strip():
             return
+        text = clip(text)
         identity = r.get('uuid')
         if not isinstance(identity, str):
             return
@@ -125,6 +133,7 @@ class ClaudeRollout(Rollout):
                 if old['nativeId'] == identity:
                     changed = old['text'] != text or self.inline_refs.get(identity) != inline
                     if changed:
+                        self.text_size += len(text) - len(old['text'])
                         old.update(text=text, at=at)
                         self.inline_refs[identity] = inline
                         event_id = identity + ':message'
@@ -136,13 +145,8 @@ class ClaudeRollout(Rollout):
                         else:
                             self.activity(event_id, at, 'message', 'Updated a message')
             return
-        if len(self.messages) == MESSAGE_LIMIT:
-            self.truncated = True
-            self.ids.discard(self.messages[0]['nativeId'])
-            self.inline_refs.pop(self.messages[0]['nativeId'], None)
-        self.ids.add(identity)
-        self.messages.append({'nativeId': identity, 'role': role, 'text': text,
-                              'at': at, 'turnId': self.turn, 'phase': 'final' if self.state == 'idle' else 'commentary'})
+        self.remember({'nativeId': identity, 'role': role, 'text': text,
+                       'at': at, 'turnId': self.turn, 'phase': 'final' if self.state == 'idle' else 'commentary'})
         self.inline_refs[identity] = inline
         self.activity(identity + ':message', at, 'message', 'Sent a message' if role == 'assistant' else 'Received a message')
 
@@ -219,8 +223,8 @@ class ClaudeCodeProvider(Provider):
                 chats.append(chat)
                 groups.setdefault(chat['groupId'], {'id': chat['groupId'], 'label': chat['groupLabel'],
                     'provider': self.id, 'kind': 'project', 'order': len(groups), 'collapsed': False})
-            except (ProviderError, OSError):
-                continue
+            except (ProviderError, OSError, TypeError, ValueError, AttributeError, KeyError):
+                continue  # One malformed transcript must not hide the other chats.
         self._groups = list(groups.values())
         return chats
 

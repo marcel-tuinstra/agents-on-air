@@ -18,12 +18,14 @@ class Slot:
     error: Optional[str] = None
     refreshed: float = float('-inf')
     loading: bool = False
+    attempt: int = 0
     ready: threading.Event = field(default_factory=threading.Event)
 
 
 class LiveFeed:
-    def __init__(self, interval=2, capacity=128, clock=time.monotonic):
+    def __init__(self, interval=2, capacity=128, clock=time.monotonic, stall=30):
         self.interval = interval
+        self.stall = stall
         self.capacity = capacity
         self.clock = clock
         self.slots = OrderedDict()
@@ -39,16 +41,18 @@ class LiveFeed:
             slot = self.slots.get(key)
             if slot is None:
                 if len(self.slots) >= self.capacity:
-                    victim = next((k for k, item in self.slots.items() if not item.loading), None)
+                    victim = next((k for k, item in self.slots.items() if not self.busy(item)), None)
                     if victim is None:
                         raise ProviderError('The viewer is busy. Try again shortly.')
                     del self.slots[victim]
                 slot = self.slots[key] = Slot()
             self.slots.move_to_end(key)
-            if not slot.loading and self.clock() - slot.refreshed >= self.interval:
+            if not self.busy(slot) and self.clock() - slot.refreshed >= self.interval:
+                # A stalled loader is abandoned; its late result is fenced out by attempt.
                 slot.loading = True
                 slot.refreshed = self.clock()
-                threading.Thread(target=self._refresh, args=(slot, loader), daemon=True).start()
+                slot.attempt += 1
+                threading.Thread(target=self._refresh, args=(slot, loader, slot.attempt), daemon=True).start()
             warm = slot.ready.is_set()
         # Warm readers receive the last revision while the shared refresh runs.
         if not warm and not slot.ready.wait(timeout=10):
@@ -58,7 +62,10 @@ class LiveFeed:
                 raise ProviderError(slot.error)
             return slot.value
 
-    def _refresh(self, slot, loader):
+    def busy(self, slot):
+        return slot.loading and self.clock() - slot.refreshed < self.stall
+
+    def _refresh(self, slot, loader, attempt):
         try:
             value, error = loader(), None
         except ProviderError as failure:
@@ -67,6 +74,8 @@ class LiveFeed:
             # Local paths or transcript content must not escape in tracebacks.
             value, error = None, 'The local chat source could not be read.'
         with self.lock:
+            if attempt != slot.attempt:
+                return
             slot.value = value
             slot.error = error
             slot.loading = False

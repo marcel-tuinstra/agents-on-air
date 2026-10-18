@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import secrets
+import threading
 import time
 from http import cookies
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,7 +22,9 @@ STATIC = Path(__file__).parent / 'static'
 
 class StudioServer(ThreadingHTTPServer):
     daemon_threads = True
+    connection_limit = 64
     def __init__(self, address, registry):
+        self.connections = threading.BoundedSemaphore(self.connection_limit)
         self.registry = registry
         self.narration = NarrationService()
         self.token = secrets.token_urlsafe(32)
@@ -34,6 +37,22 @@ class StudioServer(ThreadingHTTPServer):
         self.server_name = 'localhost'
         self.server_port = self.server_address[1]
 
+    def process_request(self, request, client_address):
+        # Each connection holds a thread; refuse extras instead of growing without bound.
+        if not self.connections.acquire(blocking=False):
+            return self.shutdown_request(request)
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            self.connections.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.connections.release()
+
     def catalog(self):
         return self.feed.read('catalog', self.registry.catalog)
 
@@ -45,6 +64,8 @@ class StudioServer(ThreadingHTTPServer):
         super().server_close()
 
 class Handler(BaseHTTPRequestHandler):
+    # Bounds stalled reads and writes; event streams write a heartbeat every two seconds.
+    timeout = 20
     def log_message(self, *args):
         pass  # Never log chat identifiers or content.
     def origin_allowed(self):
@@ -57,8 +78,8 @@ class Handler(BaseHTTPRequestHandler):
     def authorized(self):
         try:
             jar = cookies.SimpleCookie(self.headers.get('Cookie', ''))
-            return secrets.compare_digest(jar['studio_session'].value, self.server.token)
-        except (KeyError, cookies.CookieError):
+            return secrets.compare_digest(jar['studio_session'].value.encode(), self.server.token.encode())
+        except (KeyError, cookies.CookieError, UnicodeError):
             return False
     def respond(self, status, body, kind='application/json; charset=utf-8', bootstrap=False, language=None):
         if isinstance(body, dict):

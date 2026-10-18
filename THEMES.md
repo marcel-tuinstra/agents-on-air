@@ -28,11 +28,29 @@ The ID must match the folder: lowercase letters, digits and hyphens, starting wi
 
 Files in a pack:
 
-- `theme.json`: version 1 manifest, names, rig, imagery, portrait crop, colors, font families, license and audio filename.
+- `theme.json`: version 1 manifest; see [Manifest fields](#manifest-fields).
 - `audio.json`: synthesized voices and an 11-entry cast-slot mapping (host, five characters, five silhouettes).
 - `cast.webp` / `studios.webp`: local PNG or WebP imagery. The filenames can change in the manifest.
 - Optional local TTF/WOFF2 fonts and their license notices.
 - `LICENSE`: the pack's redistribution license. Include any additional third-party notices.
+
+## Manifest fields
+
+`build.py` rejects a manifest that misses a required field or uses another type.
+
+| Field | Required | Type and limits |
+| --- | --- | --- |
+| `schemaVersion` | yes | The number `1`. |
+| `id` | yes | String equal to the folder name (see above). |
+| `name`, `shortName`, `role`, `direction`, `license` | yes | Strings of 1–240 characters. |
+| `rig` | yes | `"midnight"`, `"paper"` or `"pocket"`. |
+| `cast`, `scenery` | yes | Filename of a direct-child `.png` or `.webp` image (letters, digits, `_` and `-`). |
+| `sceneryPosition` | yes | Number from 0 to 100. |
+| `portrait` | yes | Array `[x, y, width, height]` of numbers from 0 to 256; width and height above 0. |
+| `tokens` | yes | Object of supported CSS tokens (below). It can be empty. |
+| `fonts` | no | Array of at most two `{"family": …, "file": …}` objects with a direct-child `.ttf` or `.woff2` file. |
+| `audio` | no | Direct-child audio filename; defaults to `audio.json`. |
+| `enabled` | no | Boolean; `false` skips the pack. Omitted means enabled. |
 
 Colors and typography use the `tokens` object. Supported keys are `--ink`, `--muted`, `--bg`, `--panel`, `--line`, `--accent`, `--onaccent`, `--sidebar-bg`, `--desk-edge`, `--font-ui`, `--font-display` and the four `--diff-*` colors in the bundled manifests. No arbitrary CSS or JavaScript runs from a pack. Optional `fonts` entries have a `family` and a direct-child `file`; set the matching font-family token as well. You can reuse the bundled font families without copying their files.
 

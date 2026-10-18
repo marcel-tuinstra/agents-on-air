@@ -1,16 +1,24 @@
-"""Package source and runtime; never include local chat data or QA captures."""
+"""Package the runtime and theme sources; tests, hooks and CI stay in the repository."""
 import os
 from pathlib import Path
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
 TOP_LEVEL = (
-    '.gitignore', 'build.py', 'theme_packs.py', 'package.py', 'server.py', 'live_feed.py', 'start_studio.py',
+    'build.py', 'theme_packs.py', 'server.py', 'live_feed.py', 'start_studio.py',
     'setup_studio.py', 'LICENSE', 'THIRD_PARTY.md', 'THEMES.md', 'narration.py', 'README.md', 'requirements.txt',
-    'Start Studio.command', 'Start Studio.sh', 'Start Studio.bat', '.gitattributes',
+    'Start Studio.command', 'Start Studio.sh', 'Start Studio.bat',
 )
-DIRECTORIES = ('.github', '.githooks', 'docs', 'themes', 'frontend', 'static',
-               'providers', 'tests', 'licenses', 'scripts')
+WEB = ('*.js', '*.css', '*.html', '*.json', '*.svg', '*.ttf', '*.woff2', '*.webp', '*.png')
+# Only known file types are shipped, so stray local files in these folders stay out.
+DIRECTORIES = {
+    'docs': ('*.md', '*.png', '*.gif'),
+    'themes': ('*.json', '*.webp', '*.png', '*.ttf', '*.woff2', 'LICENSE'),
+    'frontend': WEB,
+    'static': WEB,
+    'providers': ('*.py',),
+    'licenses': ('*.txt',),
+}
 
 
 def package(target, static_source=None):
@@ -18,12 +26,12 @@ def package(target, static_source=None):
     static_source = Path(static_source) if static_source is not None else ROOT / 'static'
     files = [ROOT / name for name in TOP_LEVEL]
     entries = [(path, Path('agents-on-air') / path.relative_to(ROOT)) for path in files]
-    for name in DIRECTORIES:
+    for name, patterns in DIRECTORIES.items():
         source = static_source if name == 'static' else ROOT / name
         entries.extend((path, Path('agents-on-air') / name / path.relative_to(source))
-                       for path in source.rglob('*') if path.is_file()
-                       and '__pycache__' not in path.parts
-                       and path.suffix != '.pyc' and not path.name.startswith('.'))
+                       for path in source.rglob('*') if path.is_file() and not path.is_symlink()
+                       and '__pycache__' not in path.parts and not path.name.startswith('.')
+                       and any(path.match(pattern) for pattern in patterns))
     partial = target.with_suffix('.zip.tmp')
     with zipfile.ZipFile(partial, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         for path, archive_name in sorted(entries, key=lambda entry: str(entry[1])):

@@ -14,6 +14,8 @@ from .artifacts import ArtifactStore, RecentArtifacts, image_references, diff_ar
 MAX_INITIAL = 2 * 1024 * 1024
 MAX_LINE = 4 * 1024 * 1024
 MESSAGE_LIMIT = 200
+MESSAGE_TEXT = 32 * 1024
+TEXT_BUDGET = 1024 * 1024
 
 
 def timestamp(value):
@@ -23,6 +25,10 @@ def timestamp(value):
         return datetime.fromisoformat(value.replace('Z', '+00:00')).timestamp()
     except (ValueError, TypeError, AttributeError):
         return 0
+
+
+def clip(text):
+    return text if len(text) <= MESSAGE_TEXT else text[:MESSAGE_TEXT] + '\n\n… (shortened for the studio)'
 
 
 def text_content(value):
@@ -42,6 +48,7 @@ class Rollout:
         self.inode = None
         self.messages = deque(maxlen=MESSAGE_LIMIT)
         self.ids = set()
+        self.text_size = 0
         self.events = deque(maxlen=MESSAGE_LIMIT)
         self.event_ids = set()
         self.last_activity = 0
@@ -66,11 +73,14 @@ class Rollout:
         kind, p = record.get('type'), record.get('payload', {})
         if not isinstance(p, dict):
             return
+        ordinal = record.get('ordinal')
+        ordinal = ordinal if isinstance(ordinal, int) and not isinstance(ordinal, bool) else 0
         if kind == 'session_meta':
-            self.minimum_ordinal = p.get('subagent_history_start_ordinal') or 0
+            start = p.get('subagent_history_start_ordinal')
+            self.minimum_ordinal = start if isinstance(start, int) and not isinstance(start, bool) else 0
             if isinstance(p.get('cwd'), str):
                 self.cwd = p['cwd']
-        if (record.get('ordinal') or 0) < self.minimum_ordinal:
+        if ordinal < self.minimum_ordinal:
             return
         at = timestamp(record.get('timestamp'))
         self.last_event = max(self.last_event, at)
@@ -97,7 +107,7 @@ class Rollout:
                     self.activity(call_id + ':output', at, 'work', 'Tool finished')
             return
         if kind == 'turn_context':
-            self.model = p.get('model') or self.model
+            self.model = p['model'] if isinstance(p.get('model'), str) and p['model'] else self.model
             self.root_turn = p.get('root_turn_id') or self.root_turn
             if not self.turn:
                 self.turn = p.get('turn_id')
@@ -151,18 +161,29 @@ class Rollout:
                     text = '[Image]'
                 role = 'user' if item['type'] == 'UserMessage' else 'assistant'
                 if role == 'user': text = clean_user_text(text)
-                identity = item.get('id') or str(record.get('ordinal')) + ':' + role
+                identity = item['id'] if isinstance(item.get('id'), str) and item['id'] else str(record.get('ordinal')) + ':' + role
                 if identity in self.ids:
                     return
-                if len(self.messages) == MESSAGE_LIMIT:
-                    self.truncated = True
-                    self.ids.discard(self.messages[0]['nativeId'])
-                    self.image_refs.pop(self.messages[0]['nativeId'], None)
-                self.ids.add(identity)
-                self.messages.append({'nativeId': identity, 'role': role, 'text': text,
-                                      'at': at, 'turnId': p.get('turn_id'), 'phase': item.get('phase')})
+                self.remember({'nativeId': identity, 'role': role, 'text': text,
+                               'at': at, 'turnId': p.get('turn_id'), 'phase': item.get('phase')})
                 self.image_refs[identity] = images
                 self.activity(str(identity) + ':message', at, 'message', 'Sent a message' if role == 'assistant' else 'Received a message')
+
+    def remember(self, message):
+        message['text'] = clip(message['text'])
+        # Bounded by count and by retained text, so huge messages cannot pin memory.
+        while self.messages and (len(self.messages) == MESSAGE_LIMIT
+                                 or self.text_size + len(message['text']) > TEXT_BUDGET):
+            self.forget(self.messages.popleft())
+        self.messages.append(message)
+        self.ids.add(message['nativeId'])
+        self.text_size += len(message['text'])
+
+    def forget(self, message):
+        self.truncated = True
+        self.ids.discard(message['nativeId'])
+        self.image_refs.pop(message['nativeId'], None)
+        self.text_size -= len(message['text'])
 
     def activity(self, identity, at, kind, label):
         if not at or identity in self.event_ids:
@@ -188,9 +209,9 @@ class Rollout:
                 first = f.readline(MAX_LINE)
                 try:
                     meta = json.loads(first)
-                    if meta.get('type') == 'session_meta':
+                    if isinstance(meta, dict) and meta.get('type') == 'session_meta':
                         self.consume(meta)
-                except (ValueError, UnicodeError):
+                except (ValueError, UnicodeError, TypeError, AttributeError, KeyError):
                     pass
             if stat.st_size > MAX_INITIAL:
                 with self.path.open('rb') as f:
@@ -220,8 +241,8 @@ class Rollout:
                     continue
                 try:
                     self.consume(json.loads(line))
-                except (ValueError, UnicodeError):
-                    continue
+                except (ValueError, UnicodeError, TypeError, AttributeError, KeyError):
+                    continue  # A malformed record affects only itself.
         with self.path.open('rb') as check:
             check.seek(max(0, self.offset - 256))
             self.checkpoint = check.read(min(self.offset, 256))

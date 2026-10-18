@@ -201,17 +201,15 @@ class VerificationPaths(unittest.TestCase):
             package(target, static_source=generated)
             with zipfile.ZipFile(target) as archive:
                 self.assertIsNone(archive.testzip())
-                self.assertIn('agents-on-air/static/index.html', archive.namelist())
-                for name in ('agents-on-air/.gitattributes',
-                             'agents-on-air/.githooks/pre-commit',
-                             'agents-on-air/.githooks/pre-push',
-                             'agents-on-air/scripts/verify.py',
-                             'agents-on-air/scripts/install_hooks.py'):
-                    self.assertIn(name, archive.namelist())
+                names = archive.namelist()
+                self.assertIn('agents-on-air/static/index.html', names)
+                self.assertIn('agents-on-air/themes/paper/LICENSE', names)
+                self.assertIn('agents-on-air/frontend/public/fonts/Lora.ttf', names)
+                for prefix in ('agents-on-air/tests/', 'agents-on-air/.githooks/', 'agents-on-air/.github/',
+                               'agents-on-air/scripts/', 'agents-on-air/.git'):
+                    self.assertFalse([name for name in names if name.startswith(prefix)], prefix)
                 if os.name != 'nt':
-                    for name in ('agents-on-air/.githooks/pre-commit',
-                                 'agents-on-air/.githooks/pre-push'):
-                        self.assertTrue((archive.getinfo(name).external_attr >> 16) & 0o111)
+                    self.assertTrue((archive.getinfo('agents-on-air/Start Studio.sh').external_attr >> 16) & 0o111)
             with patch.dict(os.environ, {'PYTHONIOENCODING': 'cp1252',
                                          'STUDIO_NARRATION_MODE': 'byok',
                                          'STUDIO_NARRATION_PROVIDER': 'openai',

@@ -16,6 +16,14 @@ MAX_IMAGE = 8 * 1024 * 1024
 MAX_DIFF = 64 * 1024
 IMAGE_RE = re.compile(r'!\[([^\]]{0,120})\]\(([^)\n]{1,1024})\)')
 SENSITIVE = {'.env', '.ssh', '.aws', 'credentials', 'secrets', 'id_rsa', 'id_ed25519', 'private'}
+# The viewer is meant to be on screen; prefer hiding a harmless diff over showing a key.
+SENSITIVE_NAME = re.compile(r'credential|secret|passw(or)?d|private[-_]?key|service[-_]?account|api[-_]?key'
+                            r'|id_(rsa|dsa|ecdsa|ed25519)|kubeconfig|htpasswd|keystore|\.env$'
+                            r'|\.(pem|key|p12|pfx|jks|ppk|asc|gpg|kdbx|keychain)$')
+SECRET_TEXT = re.compile(r'-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----|\bAKIA[0-9A-Z]{16}\b|\bgh[pousr]_[A-Za-z0-9]{36,}'
+                         r'|\bgithub_pat_[A-Za-z0-9_]{22,}|\bsk-[A-Za-z0-9_-]{20,}|\bxox[abprs]-[A-Za-z0-9-]{10,}'
+                         r'|\bAIza[0-9A-Za-z_-]{35}|\b[rs]k_live_[0-9A-Za-z]{16,}|\bglpat-[0-9A-Za-z_-]{20,}'
+                         r'|\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}')
 
 
 class RecentArtifacts:
@@ -168,7 +176,7 @@ class ArtifactStore:
 
 def sensitive_diff_path(path):
     parts = str(path).strip().replace('\\', '/').split('/')
-    return any(part.lower() in SENSITIVE or part.startswith('.')
+    return any(part.lower() in SENSITIVE or part.startswith('.') or SENSITIVE_NAME.search(part.lower())
                for part in parts if part not in ('', '.', '..'))
 
 
@@ -181,7 +189,7 @@ def diff_artifact(text, identity, agent_id, at, label, provenance):
     for line in text.splitlines():
         if line.startswith(('*** Update File: ', '*** Add File: ', '*** Delete File: ', '+++ ', '--- ')):
             paths.append(line.split(': ', 1)[-1] if ': ' in line else line[4:])
-    if any(sensitive_diff_path(path) for path in paths):
+    if any(sensitive_diff_path(path) for path in paths) or SECRET_TEXT.search(text):
         return None
     token = hashlib.sha256((agent_id + '\0' + identity + '\0' + text).encode()).hexdigest()[:32]
     return {'id': token, 'agentId': agent_id, 'at': at, 'kind': 'diff', 'label': label[:120],
