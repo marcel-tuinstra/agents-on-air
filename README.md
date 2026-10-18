@@ -1,4 +1,9 @@
-# Agents on Air
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/media/logo-dark.svg">
+    <img alt="Agents on Air" src="docs/media/logo-light.svg" height="56">
+  </picture>
+</h1>
 
 ### Your agents. Your own news channel.
 

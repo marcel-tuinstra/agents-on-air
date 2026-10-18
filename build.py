@@ -30,7 +30,8 @@ def build(output=OUTPUT):
     scripts = ''.join(f'<script src="/{name}" defer></script>' for name in SCRIPTS)
     page = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            '<title>Agents on Air · Live</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/themes.css">'
+            '<title>Agents on Air · Live</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">'
+            '<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/themes.css">'
             '</head><body><div id="studio-hub" data-theme="midnight">'
             + room + '</div>' + scripts + '</body></html>')
     (output / 'index.html').write_text(page, encoding='utf-8')
