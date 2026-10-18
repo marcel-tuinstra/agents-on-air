@@ -15,7 +15,7 @@ python3 start_studio.py
 The project contains its build inputs. Edit `frontend/`, then run `python3 build.py`.
 The build copies the local assets and modules into `static/`. It needs no npm
 install, network access or files from the original design workspace. Run
-`python3 package.py` to create a source-and-runtime zip in the parent directory.
+`python3 package.py` to create the release zip in the parent directory.
 On Windows, use `py -3` in place of `python3`.
 
 Install the repository-local Git checks with `python3 scripts/install_hooks.py`
@@ -49,7 +49,8 @@ both providers. `live_feed.py` shares catalog and chat refreshes between browser
 tabs. It holds at most 128 latest-value slots and no per-client event backlog.
 Provider locks protect mutable readers without locking the other provider.
 Warm viewers keep the last snapshot while a refresh runs; a completed refresh
-wakes connected viewers. This does not make local logs a token stream.
+wakes connected viewers. A refresh that stalls for 30 seconds is replaced, and
+its late result is discarded. This does not make local logs a token stream.
 
 From this directory:
 
@@ -81,6 +82,6 @@ Run `python3 package.py` after building to check the ZIP before publishing. CI a
 
 To publish, merge the verified changes into `main`, then push a version tag such as `v0.1.0` on that commit. The **Release** workflow runs the shared checks on macOS, Linux and Windows. After all three pass, it publishes the tested `agents-on-air.zip` to [GitHub Releases](https://github.com/marcel-tuinstra/agents-on-air/releases). A failed check prevents publication. GitHub's workflow artifact is a build download; the ZIP attached to the release is the user download.
 
-The release includes the ready-to-run app, source, tests and documentation. Users extract it and start the launcher; they do not need to build the frontend. GitHub's generated **Source code** archives are separate from this release asset.
+The release includes the ready-to-run app, its source, theme packs and documentation. Tests, Git hooks, CI configuration and development scripts stay in the repository. Users extract it and start the launcher; they do not need to build the frontend. GitHub's generated **Source code** archives are separate from this release asset.
 
-The packager uses an explicit list of source directories. Keep personal chats, credentials, recordings, model downloads and development environments outside that list. Documentation images must use fictional data. Check the archive contents before publishing.
+The packager uses an explicit list of source directories and file types. Keep personal chats, credentials, recordings, model downloads and development environments outside that list. Documentation images must use fictional data. Check the archive contents before publishing.

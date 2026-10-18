@@ -1287,23 +1287,35 @@
     } catch {} // Keep the last confirmed configuration while disconnected.
   }
   window.addEventListener("studio-settings-saved", loadNarrationConfig);
+  let catalogTimer = 0;
+  function startCatalogTimer() {
+    clearInterval(catalogTimer);
+    catalogTimer = setInterval(() => {
+      renderCatalog();
+      const decision = StudioStage.selectionDecision(
+        catalog,
+        selected,
+        providers,
+      );
+      if (decision === "expired") expireSelected();
+      else if (snapshot) renderRoomState();
+    }, 60000);
+  }
   window.addEventListener("pagehide", () => {
+    clearInterval(catalogTimer);
     connectionStream.stop();
     speech.disable();
+  });
+  // A page restored from the back/forward cache resumes its timer and stream.
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    startCatalogTimer();
+    connect();
   });
   document.addEventListener("visibilitychange", () => {
     last = 0;
   });
-  setInterval(() => {
-    renderCatalog();
-    const decision = StudioStage.selectionDecision(
-      catalog,
-      selected,
-      providers,
-    );
-    if (decision === "expired") expireSelected();
-    else if (snapshot) renderRoomState();
-  }, 60000);
+  startCatalogTimer();
   root.dataset.view = view;
   setTheme();
   loadNarrationConfig();
