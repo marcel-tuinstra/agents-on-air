@@ -36,6 +36,12 @@ Use `--port 8879` if the default port is occupied. Source locations default to `
 
 The interface uses English. Chat titles, messages and captions retain their original language.
 
+### Watch from another device
+
+Add `--lan` to follow along on a tablet or another computer on the same network: `python3 start_studio.py --lan`. The terminal shows the addresses to open and a six-digit code. Open one of those addresses on the other device and enter the code once. This computer opens the studio without a code.
+
+A new code appears each time the server starts. After ten wrong codes, new devices are locked out until you restart; devices that already entered the code keep watching. Settings can only be changed on the computer running the studio. Anyone who enters the code can read the chats shown in the studio, so use `--lan` on networks you trust.
+
 ## Custom studio updates
 
 Open **Settings** using the sliders icon in the header. The presentation source defaults to **Original agent contributions**.
@@ -71,7 +77,7 @@ Codex uses read-only SQLite/JSONL; Claude uses local project and subagent JSONL.
 
 The adapters depend on version-sensitive local storage formats. Cloud-only and remote-computer chats are not included. The transcript is capped at 200 messages and at most 100 recent descendant relationships. Uncertain relationships are not asserted as a known cast. Saved Codex groups and Claude project folders are preserved.
 
-The server binds only to loopback. Access uses Host/Origin/Fetch-Site checks, a random HttpOnly/SameSite cookie, no-store responses and CSP. Existing agents cannot be prompted, started, stopped or approved through the viewer. Optional studio-update requests are separate and off by default. This is not a security boundary against other processes running as the same local user.
+By default the server binds only to loopback. With `--lan` it also accepts other devices on the network, which must enter the startup code first; it then accepts this computer's own names and plain IP addresses as Host. Access uses Host/Origin/Fetch-Site checks, a random HttpOnly/SameSite cookie, no-store responses and CSP. Existing agents cannot be prompted, started, stopped or approved through the viewer. Optional studio-update requests are separate and off by default. This is not a security boundary against other processes running as the same local user.
 
 Artifact URLs use opaque IDs. Only verified, chat-linked local files are served, with type, size, location, symlink and file-change checks. Arbitrary paths, executable HTML/SVG previews and continuous screen capture are unsupported. Sensitive diff paths are withheld. A shared Git diff is never used to infer individual contributions.
 

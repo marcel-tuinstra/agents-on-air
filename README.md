@@ -46,6 +46,8 @@ You need **Python 3.9+** (3.12 recommended), a browser, and local Codex or Claud
 
 Run the command in a terminal opened in that folder. Your browser opens at **http://127.0.0.1:8878**. Choose a recent chat, then move the window to your second screen. Stop the server with Ctrl+C.
 
+Want to watch on a tablet? Start with `--lan` and enter the code shown in the terminal. [Watch from another device](docs/usage.md#watch-from-another-device).
+
 [Start options and controls](docs/usage.md) · [Build from source](docs/development.md)
 
 ## Your chats stay on your machine

@@ -6,7 +6,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parent
 TOP_LEVEL = (
     'build.py', 'theme_packs.py', 'server.py', 'live_feed.py', 'start_studio.py',
-    'setup_studio.py', 'LICENSE', 'THIRD_PARTY.md', 'THEMES.md', 'narration.py', 'README.md', 'requirements.txt',
+    'setup_studio.py', 'lan_access.py', 'LICENSE', 'THIRD_PARTY.md', 'THEMES.md', 'narration.py', 'README.md', 'requirements.txt',
     'Start Studio.command', 'Start Studio.sh', 'Start Studio.bat',
 )
 WEB = ('*.js', '*.css', '*.html', '*.json', '*.svg', '*.ttf', '*.woff2', '*.webp', '*.png')

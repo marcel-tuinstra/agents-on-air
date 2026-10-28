@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agents on Air · Enter code</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/unlock/unlock.css">
+<script src="/unlock/unlock.js" defer></script>
+</head>
+<body>
+<main>
+  <img src="/favicon.svg" alt="" width="56" height="56">
+  <h1>Agents on Air</h1>
+  <p>Enter the six-digit code shown on the computer running the studio.</p>
+  <form method="post" action="/unlock" class="{{state}}" data-unlock>
+    <input type="hidden" name="next" value="{{next}}">
+    <fieldset class="digits" aria-label="Six-digit code"{{disabled}}>
+      <input class="digit" name="d" inputmode="numeric" pattern="[0-9]" autocomplete="off" aria-label="Digit 1" required autofocus>
+      <input class="digit" name="d" inputmode="numeric" pattern="[0-9]" autocomplete="off" aria-label="Digit 2" required>
+      <input class="digit" name="d" inputmode="numeric" pattern="[0-9]" autocomplete="off" aria-label="Digit 3" required>
+      <input class="digit" name="d" inputmode="numeric" pattern="[0-9]" autocomplete="off" aria-label="Digit 4" required>
+      <input class="digit" name="d" inputmode="numeric" pattern="[0-9]" autocomplete="off" aria-label="Digit 5" required>
+      <input class="digit" name="d" inputmode="numeric" pattern="[0-9]" autocomplete="off" aria-label="Digit 6" required>
+    </fieldset>
+    <noscript><button type="submit"{{disabled}}>Watch</button></noscript>
+  </form>
+  {{error}}
+</main>
+</body>
+</html>
