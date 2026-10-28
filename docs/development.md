@@ -70,6 +70,7 @@ node tests/test_pocket.cjs
 node tests/test_midnight.cjs
 node tests/test_body.cjs
 node tests/test_captions.cjs
+node tests/test_unlock.cjs
 ```
 
 Fixtures use fictional databases and transcripts. HTTP/SSE tests bind temporary loopback ports. The screenshots in `docs/media/` show the real interface with fictional chats; they contain no personal chat data.

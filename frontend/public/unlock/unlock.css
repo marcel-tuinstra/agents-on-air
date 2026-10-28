@@ -1,0 +1,110 @@
+@font-face {
+  font-family: Lora;
+  src: url("/fonts/Lora.ttf") format("truetype");
+  font-weight: 400 700;
+}
+:root {
+  --ink: #f6ead7;
+  --muted: #c9b39c;
+  --bg: #211918;
+  --panel: #352725;
+  --line: #8a6b56;
+  --accent: #e8b877;
+  --onaccent: #2c1b17;
+  --error: #ffb4a8;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Lora, Georgia, serif;
+}
+main {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+p {
+  color: var(--muted);
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+.digits {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.digit {
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  text-align: center;
+  caret-color: transparent;
+  font: 600 clamp(24px, 8vw, 34px) / 1 Lora, Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.digit:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 184, 119, 0.3);
+  transform: translateY(-2px);
+}
+.digit:disabled {
+  opacity: 0.4;
+}
+.wrong .digits {
+  animation: shake 0.4s;
+}
+.wrong .digit {
+  border-color: var(--error);
+}
+@keyframes shake {
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wrong .digits {
+    animation: none;
+  }
+  .digit,
+  .digit:focus {
+    transition: none;
+    transform: none;
+  }
+}
+button {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  font: 600 18px Lora, Georgia, serif;
+  background: var(--accent);
+  color: var(--onaccent);
+  cursor: pointer;
+}
+.error {
+  color: var(--error);
+  margin: 20px 0 0;
+}

@@ -2,6 +2,7 @@
 """Local chat viewer with opt-in provider summaries."""
 import re
 import argparse
+import html
 import json
 import os
 import secrets
@@ -17,13 +18,23 @@ from providers.codex import CodexProvider
 from providers.claude import ClaudeCodeProvider
 from narration import NarrationService, NarrationError
 from live_feed import LiveFeed
+from lan_access import LanAccess, LOOPBACK_NAMES, host_name
 
 STATIC = Path(__file__).parent / 'static'
+CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+       "connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+UNLOCK_CSP = CSP.replace("form-action 'none'", "form-action 'self'")
+PAGES = ('/', '/voice-lab')
+# Public assets: browsers may fetch icons without the session cookie, and the code page needs its own files.
+PUBLIC = {'/favicon.svg': 'image/svg+xml', '/favicon-32.png': 'image/png', '/apple-touch-icon.png': 'image/png',
+          '/unlock/unlock.css': 'text/css; charset=utf-8', '/unlock/unlock.js': 'text/javascript; charset=utf-8',
+          '/fonts/Lora.ttf': 'font/ttf'}
 
 class StudioServer(ThreadingHTTPServer):
     daemon_threads = True
     connection_limit = 64
-    def __init__(self, address, registry):
+    def __init__(self, address, registry, lan=None):
+        self.lan = lan
         self.connections = threading.BoundedSemaphore(self.connection_limit)
         self.registry = registry
         self.narration = NarrationService()
@@ -68,20 +79,25 @@ class Handler(BaseHTTPRequestHandler):
     timeout = 20
     def log_message(self, *args):
         pass  # Never log chat identifiers or content.
+    def host_allowed(self, value):
+        name = host_name(value, self.server.server_port)
+        if name is None:
+            return False
+        return self.server.lan.host_allowed(name) if self.server.lan else name in LOOPBACK_NAMES
     def origin_allowed(self):
-        port = self.server.server_port
-        hosts = {f'127.0.0.1:{port}', f'localhost:{port}'}
         origin = self.headers.get('Origin')
-        return (self.headers.get('Host') in hosts and
-                (not origin or origin in {f'http://{h}' for h in hosts}) and
+        return (self.host_allowed(self.headers.get('Host')) and
+                (not origin or (origin.startswith('http://') and self.host_allowed(origin[len('http://'):]))) and
                 self.headers.get('Sec-Fetch-Site', '') in ('', 'same-origin', 'none'))
+    def remote(self):
+        return self.client_address[0] not in ('127.0.0.1', '::1')
     def authorized(self):
         try:
             jar = cookies.SimpleCookie(self.headers.get('Cookie', ''))
             return secrets.compare_digest(jar['studio_session'].value.encode(), self.server.token.encode())
         except (KeyError, cookies.CookieError, UnicodeError):
             return False
-    def respond(self, status, body, kind='application/json; charset=utf-8', bootstrap=False, language=None):
+    def respond(self, status, body, kind='application/json; charset=utf-8', bootstrap=False, language=None, form=False):
         if isinstance(body, dict):
             body = json.dumps(body, ensure_ascii=False).encode()
         if isinstance(body, str):
@@ -90,8 +106,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', kind)
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
-        self.send_header('Referrer-Policy', 'no-referrer')
-        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'")
+        # A same-origin form needs a referrer policy that keeps its Origin; no-referrer sends "Origin: null".
+        self.send_header('Referrer-Policy', 'same-origin' if form else 'no-referrer')
+        self.send_header('Content-Security-Policy', UNLOCK_CSP if form else CSP)
         if bootstrap:
             self.send_header('Set-Cookie', f'studio_session={self.server.token}; HttpOnly; SameSite=Strict; Path=/')
         if language:
@@ -103,13 +120,14 @@ class Handler(BaseHTTPRequestHandler):
         if not self.origin_allowed():
             return self.respond(403, {'error': 'Only local access from this app is allowed.'})
         route = urlsplit(self.path)
+        if route.path in PUBLIC:
+            return self.respond(200, (STATIC/route.path.lstrip('/')).read_bytes(), PUBLIC[route.path])
+        if self.server.lan and self.remote() and not self.authorized() and route.path in PAGES:
+            return self.unlock_page(200, route.path)
         if route.path == '/voice-lab':
             return self.respond(200, (STATIC/'voice-lab/index.html').read_bytes(), 'text/html; charset=utf-8', True)
         if route.path == '/':
             return self.respond(200, (STATIC/'index.html').read_bytes(), 'text/html; charset=utf-8', True)
-        icons = {'/favicon.svg': 'image/svg+xml', '/favicon-32.png': 'image/png', '/apple-touch-icon.png': 'image/png'}
-        if route.path in icons:  # Public brand assets; browsers may fetch icons without the session cookie.
-            return self.respond(200, (STATIC/route.path.lstrip('/')).read_bytes(), icons[route.path])
         if not self.authorized():
             return self.respond(401, {'error': 'Reopen the studio to connect.'})
         if route.path == '/api/narration/config':
@@ -202,14 +220,50 @@ class Handler(BaseHTTPRequestHandler):
                 emit('source-error', {'error': str(error)})
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             return
+    def unlock_page(self, status, next_path, error=''):
+        locked = self.server.lan.locked()
+        if locked:
+            error = 'Too many wrong codes. Restart the studio for a new code.'
+        page = (STATIC/'unlock/index.html').read_text(encoding='utf-8')
+        for key, value in {'next': html.escape(next_path), 'disabled': ' disabled' if locked else '',
+                           'state': 'wrong' if error and not locked else '',
+                           'error': f'<p class="error" role="alert">{html.escape(error)}</p>' if error else ''}.items():
+            page = page.replace('{{'+key+'}}', value)
+        return self.respond(status, page, 'text/html; charset=utf-8', form=True)
+    def unlock(self):
+        if not self.origin_allowed():
+            return self.respond(403, {'error': 'Only local access is allowed.'})
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+        except ValueError:
+            length = -1
+        if not 0 < length <= 256:
+            return self.respond(413, {'error': 'Request too large.'})
+        form = parse_qs(self.rfile.read(length).decode('utf-8', 'replace'))
+        next_path = form.get('next', ['/'])[0]
+        if next_path not in PAGES:
+            next_path = '/'
+        code = ''.join(form.get('d', [])) or form.get('code', [''])[0]
+        if self.remote() and not self.server.lan.check(code.strip()):
+            return self.unlock_page(403, next_path, 'That code is not right. Check the studio and try again.')
+        self.send_response(303)
+        self.send_header('Location', next_path)
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Set-Cookie', f'studio_session={self.server.token}; HttpOnly; SameSite=Strict; Path=/')
+        self.send_header('Content-Length', '0')
+        self.end_headers()
     def do_POST(self):
         route = urlsplit(self.path).path
+        if route == '/unlock' and self.server.lan:
+            return self.unlock()
         if route not in ('/api/narration', '/api/narration/config'):
             return self.respond(405, {'error': 'This studio is read-only.'})
         if not self.origin_allowed():
             return self.respond(403, {'error':'Only local access is allowed.'})
         if not self.authorized():
             return self.respond(401, {'error':'Reopen the studio to connect.'})
+        if route == '/api/narration/config' and self.server.lan and self.remote():
+            return self.respond(403, {'error':'Change settings on the computer running the studio.'})
         if self.headers.get('Content-Type','').split(';')[0] != 'application/json':
             return self.respond(415, {'error':'JSON required.'})
         try:
@@ -244,9 +298,16 @@ if __name__ == '__main__':
     parser.add_argument('--claude-home', type=Path, default=Path(os.environ.get('CLAUDE_CONFIG_DIR', Path.home()/'.claude')))
     parser.add_argument('--port', type=int, default=8878)
     parser.add_argument('--codex-home', type=Path, default=Path(os.environ.get('CODEX_HOME', Path.home()/'.codex')))
+    parser.add_argument('--lan', action='store_true', help='Also serve other devices on this network; they enter a code')
     args = parser.parse_args()
-    server = StudioServer(('127.0.0.1', args.port), Registry([CodexProvider(args.codex_home), ClaudeCodeProvider(args.claude_home)]))
+    lan = LanAccess() if args.lan else None
+    server = StudioServer(('0.0.0.0' if lan else '127.0.0.1', args.port),
+                          Registry([CodexProvider(args.codex_home), ClaudeCodeProvider(args.claude_home)]), lan)
     print(f'Agents on Air: http://127.0.0.1:{server.server_port}', flush=True)
+    if lan:
+        for url in lan.urls(server.server_port):
+            print(f'Other devices: {url}', flush=True)
+        print(f'Code for other devices: {lan.code}', flush=True)
     print('Local Codex + Claude Code viewer · Ctrl+C to stop', flush=True)
     if args.open_browser:
         import webbrowser
